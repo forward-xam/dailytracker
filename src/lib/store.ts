@@ -1,20 +1,77 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { SEED_TASKS } from "./seed";
-import type { DayLog, Store, Task } from "./types";
+import type {
+  DayLog,
+  PlanHorizon,
+  PlanItem,
+  Store,
+  Task,
+} from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_PATH = path.join(DATA_DIR, "store.json");
 
+function emptyPlans(): Store["plans"] {
+  return { "10y": [], "1y": [], "1m": [], "1d": [] };
+}
+
 function emptyDay(date: string): DayLog {
-  return { date, completions: {}, mood: null };
+  return { date, completions: {}, planDone: {}, mood: null };
 }
 
 function defaultStore(): Store {
   return {
     tasks: structuredClone(SEED_TASKS),
     days: {},
+    plans: emptyPlans(),
   };
+}
+
+function migrateStore(parsed: Store): { store: Store; changed: boolean } {
+  let changed = false;
+
+  if (!parsed.plans) {
+    parsed.plans = emptyPlans();
+    changed = true;
+  }
+  for (const key of ["10y", "1y", "1m", "1d"] as PlanHorizon[]) {
+    if (!parsed.plans[key]) {
+      parsed.plans[key] = [];
+      changed = true;
+    }
+  }
+
+  for (const day of Object.values(parsed.days)) {
+    if (!day.planDone) {
+      day.planDone = {};
+      changed = true;
+    }
+  }
+
+  for (const task of parsed.tasks) {
+    if (task.id === "t03" || task.id === "t19") {
+      if (!task.archived || !task.hidden) {
+        task.archived = true;
+        task.hidden = true;
+        changed = true;
+      }
+    }
+    if (task.id === "t12") {
+      if (task.type !== "count" || task.target !== 3) {
+        task.type = "count";
+        task.target = 3;
+        task.title = "Back exercises (3 sets)";
+        changed = true;
+      }
+    }
+    if (task.id === "t29" && task.type === "count" && task.target !== 2000) {
+      task.target = 2000;
+      changed = true;
+    }
+  }
+
+  return { store: parsed, changed };
 }
 
 async function ensureStore(): Promise<Store> {
@@ -25,21 +82,11 @@ async function ensureStore(): Promise<Store> {
     if (!parsed.tasks || !parsed.days) {
       throw new Error("Invalid store shape");
     }
-    let changed = false;
-    for (const task of parsed.tasks) {
-      if (
-        task.id === "t29" &&
-        task.type === "count" &&
-        (task.target ?? 0) < 5000
-      ) {
-        task.target = 5000;
-        changed = true;
-      }
-    }
+    const { store, changed } = migrateStore(parsed);
     if (changed) {
-      await fs.writeFile(STORE_PATH, JSON.stringify(parsed, null, 2), "utf8");
+      await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
     }
-    return parsed;
+    return store;
   } catch {
     const store = defaultStore();
     await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), "utf8");
@@ -64,18 +111,25 @@ export async function getOrCreateDay(date: string): Promise<{
   if (!store.days[date]) {
     store.days[date] = emptyDay(date);
     await writeStore(store);
+  } else if (!store.days[date].planDone) {
+    store.days[date].planDone = {};
+    await writeStore(store);
   }
   return { store, day: store.days[date] };
 }
 
 export async function updateDay(
   date: string,
-  patch: Partial<Pick<DayLog, "completions" | "mood">>,
+  patch: Partial<Pick<DayLog, "completions" | "mood" | "planDone">>,
 ): Promise<DayLog> {
   const store = await ensureStore();
   const day = store.days[date] ?? emptyDay(date);
+  if (!day.planDone) day.planDone = {};
   if (patch.completions) {
     day.completions = { ...day.completions, ...patch.completions };
+  }
+  if (patch.planDone) {
+    day.planDone = { ...day.planDone, ...patch.planDone };
   }
   if (patch.mood !== undefined) {
     day.mood = patch.mood;
@@ -92,6 +146,7 @@ export async function setTaskCompletion(
 ): Promise<DayLog> {
   const store = await ensureStore();
   const day = store.days[date] ?? emptyDay(date);
+  if (!day.planDone) day.planDone = {};
   day.completions[taskId] = {
     ...day.completions[taskId],
     ...completion,
@@ -141,14 +196,59 @@ export async function patchTask(
   return store.tasks[idx];
 }
 
-export async function reorderTasks(orderedIds: string[]): Promise<Task[]> {
+export async function addPlanItem(
+  horizon: PlanHorizon,
+  text: string,
+): Promise<PlanItem> {
   const store = await ensureStore();
-  const map = new Map(store.tasks.map((t) => [t.id, t]));
-  orderedIds.forEach((id, i) => {
-    const task = map.get(id);
-    if (task) task.order = i + 1;
-  });
-  store.tasks.sort((a, b) => a.order - b.order);
+  const item: PlanItem = {
+    id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    text: text.trim(),
+    horizon,
+    completed: false,
+    createdAt: new Date().toISOString(),
+  };
+  store.plans[horizon].push(item);
   await writeStore(store);
-  return store.tasks;
+  return item;
+}
+
+export async function patchPlanItem(
+  id: string,
+  patch: Partial<Pick<PlanItem, "text" | "completed">>,
+): Promise<PlanItem> {
+  const store = await ensureStore();
+  for (const horizon of Object.keys(store.plans) as PlanHorizon[]) {
+    const idx = store.plans[horizon].findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      store.plans[horizon][idx] = {
+        ...store.plans[horizon][idx],
+        ...patch,
+      };
+      await writeStore(store);
+      return store.plans[horizon][idx];
+    }
+  }
+  throw new Error("Plan item not found");
+}
+
+export async function deletePlanItem(id: string): Promise<void> {
+  const store = await ensureStore();
+  for (const horizon of Object.keys(store.plans) as PlanHorizon[]) {
+    const before = store.plans[horizon].length;
+    store.plans[horizon] = store.plans[horizon].filter((p) => p.id !== id);
+    if (store.plans[horizon].length !== before) {
+      await writeStore(store);
+      return;
+    }
+  }
+  throw new Error("Plan item not found");
+}
+
+export async function setDailyPlanDone(
+  date: string,
+  itemId: string,
+  done: boolean,
+): Promise<DayLog> {
+  return updateDay(date, { planDone: { [itemId]: done } });
 }

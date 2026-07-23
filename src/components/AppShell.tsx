@@ -1,12 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PlansView } from "@/components/PlansView";
 import { StatsView } from "@/components/StatsView";
 import { TasksView } from "@/components/TasksView";
 import { TodayView } from "@/components/TodayView";
-import type { AppState, Task, TaskGroupId, TaskType } from "@/lib/types";
+import type {
+  AppState,
+  PlanHorizon,
+  PlanItem,
+  Task,
+  TaskGroupId,
+  TaskType,
+} from "@/lib/types";
 
-type Tab = "today" | "stats" | "tasks";
+type Tab = "today" | "plans" | "stats" | "tasks";
 
 function clientToday(): string {
   const now = new Date();
@@ -80,6 +88,23 @@ export function AppShell() {
     }
   }
 
+  async function mutatePlan(body: Record<string, unknown>, method: "POST" | "PATCH") {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/plans", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, ...body }),
+      });
+      if (!res.ok) throw new Error("Plan update failed");
+      setState(await res.json());
+    } catch {
+      setError("Could not update plans.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function onToggle(task: Task) {
     const current = state?.today.completions[task.id]?.done ?? false;
     void mutateDay({ taskId: task.id, done: !current });
@@ -122,6 +147,28 @@ export function AppShell() {
             onToggle={onToggle}
             onCount={onCount}
             onMood={(mood) => void mutateDay({ mood })}
+            onOpenPlans={() => setTab("plans")}
+          />
+        )}
+        {tab === "plans" && (
+          <PlansView
+            state={state}
+            busy={busy}
+            onAdd={(horizon: PlanHorizon, text: string) =>
+              void mutatePlan({ horizon, text }, "POST")
+            }
+            onToggleComplete={(item: PlanItem, completed: boolean) =>
+              void mutatePlan({ id: item.id, completed }, "PATCH")
+            }
+            onToggleDaily={(item: PlanItem, done: boolean) =>
+              void mutatePlan({ id: item.id, dailyDone: done }, "PATCH")
+            }
+            onDelete={(item: PlanItem) =>
+              void mutatePlan({ id: item.id, delete: true }, "PATCH")
+            }
+            onEditText={(item: PlanItem, text: string) =>
+              void mutatePlan({ id: item.id, text }, "PATCH")
+            }
           />
         )}
         {tab === "stats" && <StatsView state={state} today={date} />}
@@ -147,6 +194,13 @@ export function AppShell() {
           onClick={() => setTab("today")}
         >
           Today
+        </button>
+        <button
+          type="button"
+          className={tab === "plans" ? "tab tab--on" : "tab"}
+          onClick={() => setTab("plans")}
+        >
+          Plans
         </button>
         <button
           type="button"

@@ -48,6 +48,12 @@ export function TaskRow({
           {task.type === "count" && (
             <span>
               {count} / {target}
+              {count > 0 && count < target && (
+                <span className="partial-chip">
+                  {" "}
+                  · {Math.round((count / target) * 100)}% of task
+                </span>
+              )}
             </span>
           )}
           {streak > 0 && (

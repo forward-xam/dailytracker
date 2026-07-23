@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ProgressRing } from "@/components/ProgressRing";
 import { TaskRow } from "@/components/TaskRow";
-import { GROUPS } from "@/lib/types";
+import { GROUPS, PLAN_HORIZONS } from "@/lib/types";
 import type { AppState, Task } from "@/lib/types";
 import { formatDisplayDate } from "@/lib/stats";
 
@@ -14,6 +14,7 @@ interface TodayViewProps {
   onToggle: (task: Task) => void;
   onCount: (task: Task, delta: number) => void;
   onMood: (mood: number | null) => void;
+  onOpenPlans: () => void;
 }
 
 export function TodayView({
@@ -23,6 +24,7 @@ export function TodayView({
   onToggle,
   onCount,
   onMood,
+  onOpenPlans,
 }: TodayViewProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -45,20 +47,22 @@ export function TodayView({
     return map;
   }, [active]);
 
+  const plansEarned = state.planProgress.reduce((s, p) => s + p.progress, 0);
+
   return (
     <section className={`today ${busy ? "is-busy" : ""}`}>
-      <header className="today__hero">
-        <p className="brand">Day Mark</p>
+      <header className="today__hero today__hero--compact">
+        <p className="brand brand--compact">Day Mark</p>
         <h1 className="today__date">{formatDisplayDate(date)}</h1>
         <p className="today__support">
-          Mark what you did. Build the streak. Beat the spreadsheet.
+          Partial counts count. Plans count. Keep stacking the day.
         </p>
 
         <div className="today__score">
-          <ProgressRing percent={state.todayStats.percent} />
+          <ProgressRing percent={state.todayStats.percent} size={112} stroke={8} />
           <div className="today__side">
             <div className="stat-block">
-              <span className="stat-block__label">Done</span>
+              <span className="stat-block__label">Score</span>
               <span className="stat-block__value">
                 {state.todayStats.completed}/{state.todayStats.total}
               </span>
@@ -67,7 +71,7 @@ export function TodayView({
               <span className="stat-block__label">Streak</span>
               <span className="stat-block__value accent">
                 {state.streak.current}
-                <span className="stat-block__unit"> days</span>
+                <span className="stat-block__unit">d</span>
               </span>
             </div>
             <div className="stat-block">
@@ -78,7 +82,15 @@ export function TodayView({
         </div>
       </header>
 
-      <div className="mood-panel">
+      <button type="button" className="plans-chip" onClick={onOpenPlans}>
+        <span>
+          Plans · {Math.round((plansEarned / PLAN_HORIZONS.length) * 100)}% of
+          plan slots
+        </span>
+        <strong>Open →</strong>
+      </button>
+
+      <div className="mood-panel mood-panel--compact">
         <div className="mood-panel__head">
           <span>How do you feel?</span>
           <strong>{state.today.mood ? `${state.today.mood}/10` : "—"}</strong>
@@ -101,11 +113,13 @@ export function TodayView({
         const tasks = byGroup.get(group.id) ?? [];
         if (tasks.length === 0) return null;
         const isCollapsed = collapsed[group.id];
-        const doneCount = tasks.filter((t) => {
+        const groupProgress = tasks.reduce((sum, t) => {
           const c = state.today.completions[t.id];
-          if (t.type === "count") return (c?.count ?? 0) >= (t.target ?? 1);
-          return Boolean(c?.done);
-        }).length;
+          if (t.type === "count") {
+            return sum + Math.min(1, (c?.count ?? 0) / (t.target ?? 1));
+          }
+          return sum + (c?.done ? 1 : 0);
+        }, 0);
 
         return (
           <div key={group.id} className="group">
@@ -118,7 +132,7 @@ export function TodayView({
             >
               <span>{group.label}</span>
               <span className="group__count">
-                {doneCount}/{tasks.length}
+                {Math.round(groupProgress * 10) / 10}/{tasks.length}
                 <span className="group__chev">{isCollapsed ? "+" : "−"}</span>
               </span>
             </button>
