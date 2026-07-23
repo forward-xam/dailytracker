@@ -156,7 +156,7 @@ export function TasksView({ state, busy, onPatch, onCreate }: TasksViewProps) {
                 onClick={() =>
                   onPatch(task.id, {
                     archived: !task.archived,
-                    hidden: task.archived ? task.hidden : true,
+                    hidden: task.archived ? false : true,
                   })
                 }
               >

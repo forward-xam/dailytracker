@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { StatsView } from "@/components/StatsView";
 import { TasksView } from "@/components/TasksView";
 import { TodayView } from "@/components/TodayView";
@@ -23,20 +23,28 @@ export function AppShell() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/state?date=${date}`, { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to load");
-      setState(await res.json());
-      setError(null);
-    } catch {
-      setError("Could not load your tracker. Refresh and try again.");
-    }
-  }, [date]);
-
   useEffect(() => {
-    void load();
-  }, [load]);
+    const controller = new AbortController();
+
+    fetch(`/api/state?date=${date}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load");
+        return res.json() as Promise<AppState>;
+      })
+      .then((data) => {
+        setState(data);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setError("Could not load your tracker. Refresh and try again.");
+      });
+
+    return () => controller.abort();
+  }, [date]);
 
   async function mutateDay(body: Record<string, unknown>) {
     setBusy(true);
