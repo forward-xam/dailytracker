@@ -267,7 +267,7 @@ export const SEED_TASKS: Task[] = [
     title: "Repeat affirmations during the day",
     group: "close",
     type: "count",
-    target: 1000,
+    target: 5000,
     order: 29,
     hidden: false,
     archived: false,

@@ -450,11 +450,13 @@ button {
 .count-actions button {
   border: 1px solid var(--line);
   background: var(--bg-soft);
-  border-radius: 8px;
-  min-width: 44px;
-  padding: 0.3rem 0.45rem;
+  border-radius: 10px;
+  min-width: 52px;
+  min-height: 40px;
+  padding: 0.35rem 0.55rem;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .count-actions button.accent,

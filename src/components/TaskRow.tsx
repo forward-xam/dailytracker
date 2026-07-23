@@ -68,28 +68,17 @@ export function TaskRow({
 
       {task.type === "count" && (
         <div className="count-actions">
-          {target >= 100 ? (
-            <>
-              <button type="button" onClick={() => onCount(task, -50)} disabled={count <= 0}>
-                −50
-              </button>
-              <button type="button" onClick={() => onCount(task, 50)}>
-                +50
-              </button>
-              <button type="button" className="accent" onClick={() => onCount(task, 100)}>
-                +100
-              </button>
-            </>
-          ) : (
-            <>
-              <button type="button" onClick={() => onCount(task, -1)} disabled={count <= 0}>
-                −
-              </button>
-              <button type="button" className="accent" onClick={() => onCount(task, 1)}>
-                +
-              </button>
-            </>
-          )}
+          <button type="button" onClick={() => onCount(task, -1)} disabled={count <= 0}>
+            −
+          </button>
+          <button
+            type="button"
+            className="accent"
+            onClick={() => onCount(task, 1)}
+            disabled={count >= target}
+          >
+            +1
+          </button>
         </div>
       )}
     </div>

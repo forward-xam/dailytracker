@@ -25,6 +25,20 @@ async function ensureStore(): Promise<Store> {
     if (!parsed.tasks || !parsed.days) {
       throw new Error("Invalid store shape");
     }
+    let changed = false;
+    for (const task of parsed.tasks) {
+      if (
+        task.id === "t29" &&
+        task.type === "count" &&
+        (task.target ?? 0) < 5000
+      ) {
+        task.target = 5000;
+        changed = true;
+      }
+    }
+    if (changed) {
+      await fs.writeFile(STORE_PATH, JSON.stringify(parsed, null, 2), "utf8");
+    }
     return parsed;
   } catch {
     const store = defaultStore();

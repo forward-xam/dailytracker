@@ -87,7 +87,8 @@ export function AppShell() {
 
   function onCount(task: Task, delta: number) {
     const current = state?.today.completions[task.id]?.count ?? 0;
-    const next = Math.max(0, current + delta);
+    const max = task.target ?? Number.POSITIVE_INFINITY;
+    const next = Math.min(max, Math.max(0, current + delta));
     void mutateDay({ taskId: task.id, count: next });
   }
 
