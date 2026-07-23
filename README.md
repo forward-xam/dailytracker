@@ -4,10 +4,19 @@ Personal daily routine tracker — better than a spreadsheet of 1s.
 
 ## What it does
 
-- **Today**: check off ~30 seeded routines, counters for goals (posts, prayers, affirmations), mood 1–10
-- **Stats**: daily %, 30-day heatmap, current/best streak (≥70% days), per-task streaks
-- **Edit**: add, rename, hide, or archive tasks without breaking history
+- **Today**: check off routines; counters contribute **partial %** (e.g. 3/10 prayers = 30% of that task)
+- **Plans**: write & complete 10-year / 1-year / 1-month / 1-day plans — writing unlocks 25% of each slot, finishing items fills the rest
+- **Stats**: daily %, 30-day heatmap, streaks (≥70%), per-task streaks
+- **Edit**: add, rename, hide, or archive tasks
 - **No login**: one shared server store — open the same URL on laptop and phone
+
+## Scoring
+
+Each active routine + each of the 4 plan horizons is one equal share of the day.
+
+- Checkbox: 0% or 100% of that share
+- Counter (prayers, affirmations ×2000, back sets ×3, posts, etc.): `count / target`
+- Plan horizon: 0 if empty; otherwise 25% for writing + 75% × (done items / total items)
 
 ## Colors
 
@@ -31,9 +40,4 @@ npm run build
 npm start
 ```
 
-Deploy anywhere Node can keep a writable `data/` folder (VPS, Railway, Render, Fly, Docker). Ephemeral hosts (some serverless platforms) will lose the JSON file on redeploy unless you attach persistent storage.
-
-## Streaks
-
-- **Day streak**: consecutive days at **70%+** completion (today can be in progress)
-- **Task streak**: consecutive days you finished that specific task
+Deploy anywhere Node can keep a writable `data/` folder (VPS, Railway, Render, Fly, Docker).
