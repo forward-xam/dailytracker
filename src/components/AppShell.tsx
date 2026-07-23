@@ -4,6 +4,19 @@ import { useEffect, useState } from "react";
 import { StatsView } from "@/components/StatsView";
 import { TasksView } from "@/components/TasksView";
 import { TodayView } from "@/components/TodayView";
+import {
+  addPlanLocal,
+  deletePlanLocal,
+  getState,
+  initClientDb,
+  patchPlanLocal,
+  patchTaskLocal,
+  setDailyPlanDoneLocal,
+  setMood,
+  setTaskCompletion,
+  shareUrl,
+  upsertTaskLocal,
+} from "@/lib/client-db";
 import type {
   AppState,
   PlanHorizon,
@@ -29,76 +42,33 @@ export function AppShell() {
   const [state, setState] = useState<AppState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [share, setShare] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const controller = new AbortController();
-
-    fetch(`/api/state?date=${date}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load");
-        return res.json() as Promise<AppState>;
-      })
-      .then((data) => {
-        setState(data);
+    let cancelled = false;
+    initClientDb()
+      .then((result) => {
+        if (cancelled) return;
+        setShare(result.share || shareUrl(result.syncId));
+        setState(getState(date));
         setError(null);
       })
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        setError("Could not load your tracker. Refresh and try again.");
+      .catch(() => {
+        if (!cancelled) setError("Could not load your tracker.");
       });
-
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+    };
   }, [date]);
 
-  async function mutateDay(body: Record<string, unknown>) {
+  function run(updater: () => AppState) {
     setBusy(true);
     try {
-      const res = await fetch("/api/day", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, ...body }),
-      });
-      if (!res.ok) throw new Error("Update failed");
-      setState(await res.json());
+      setState(updater());
+      setError(null);
     } catch {
-      setError("Could not save. Check your connection.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function mutateTask(body: Record<string, unknown>, method: "POST" | "PATCH") {
-    setBusy(true);
-    try {
-      const res = await fetch("/api/tasks", {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, ...body }),
-      });
-      if (!res.ok) throw new Error("Task update failed");
-      setState(await res.json());
-    } catch {
-      setError("Could not update tasks.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function mutatePlan(body: Record<string, unknown>, method: "POST" | "PATCH") {
-    setBusy(true);
-    try {
-      const res = await fetch("/api/plans", {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, ...body }),
-      });
-      if (!res.ok) throw new Error("Plan update failed");
-      setState(await res.json());
-    } catch {
-      setError("Could not update plans.");
+      setError("Could not save.");
     } finally {
       setBusy(false);
     }
@@ -106,14 +76,25 @@ export function AppShell() {
 
   function onToggle(task: Task) {
     const current = state?.today.completions[task.id]?.done ?? false;
-    void mutateDay({ taskId: task.id, done: !current });
+    run(() => setTaskCompletion(date, task.id, { done: !current }));
   }
 
   function onCount(task: Task, delta: number) {
     const current = state?.today.completions[task.id]?.count ?? 0;
     const max = task.target ?? Number.POSITIVE_INFINITY;
     const next = Math.min(max, Math.max(0, current + delta));
-    void mutateDay({ taskId: task.id, count: next });
+    run(() => setTaskCompletion(date, task.id, { count: next }));
+  }
+
+  async function copyLink() {
+    if (!share) return;
+    try {
+      await navigator.clipboard.writeText(share);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Could not copy link.");
+    }
   }
 
   if (!state) {
@@ -138,6 +119,13 @@ export function AppShell() {
           </div>
         )}
 
+        <div className="sync-bar">
+          <span>Use this same link on phone and laptop — your marks stay synced.</span>
+          <button type="button" className="btn btn--primary" onClick={() => void copyLink()}>
+            {copied ? "Copied" : "Copy link"}
+          </button>
+        </div>
+
         {tab === "today" && (
           <TodayView
             state={state}
@@ -145,21 +133,21 @@ export function AppShell() {
             busy={busy}
             onToggle={onToggle}
             onCount={onCount}
-            onMood={(mood) => void mutateDay({ mood })}
+            onMood={(mood) => run(() => setMood(date, mood))}
             onAddPlan={(horizon: PlanHorizon, text: string) =>
-              void mutatePlan({ horizon, text }, "POST")
+              run(() => addPlanLocal(date, horizon, text))
             }
             onTogglePlanComplete={(item: PlanItem, completed: boolean) =>
-              void mutatePlan({ id: item.id, completed }, "PATCH")
+              run(() => patchPlanLocal(date, item.id, { completed }))
             }
             onTogglePlanDaily={(item: PlanItem, done: boolean) =>
-              void mutatePlan({ id: item.id, dailyDone: done }, "PATCH")
+              run(() => setDailyPlanDoneLocal(date, item.id, done))
             }
             onDeletePlan={(item: PlanItem) =>
-              void mutatePlan({ id: item.id, delete: true }, "PATCH")
+              run(() => deletePlanLocal(date, item.id))
             }
             onEditPlanText={(item: PlanItem, text: string) =>
-              void mutatePlan({ id: item.id, text }, "PATCH")
+              run(() => patchPlanLocal(date, item.id, { text }))
             }
           />
         )}
@@ -168,13 +156,15 @@ export function AppShell() {
           <TasksView
             state={state}
             busy={busy}
-            onPatch={(id, patch) => void mutateTask({ id, ...patch }, "PATCH")}
+            onPatch={(id, patch) =>
+              run(() => patchTaskLocal(date, id, patch))
+            }
             onCreate={(input: {
               title: string;
               group: TaskGroupId;
               type: TaskType;
               target?: number;
-            }) => void mutateTask(input, "POST")}
+            }) => run(() => upsertTaskLocal(date, input))}
           />
         )}
       </main>
