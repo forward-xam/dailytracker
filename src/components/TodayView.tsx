@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PlanSlots } from "@/components/PlanSlots";
 import { ProgressRing } from "@/components/ProgressRing";
 import { TaskRow } from "@/components/TaskRow";
-import { GROUPS, PLAN_HORIZONS } from "@/lib/types";
-import type { AppState, Task } from "@/lib/types";
+import { GROUPS } from "@/lib/types";
+import type { AppState, PlanHorizon, PlanItem, Task } from "@/lib/types";
 import { formatDisplayDate } from "@/lib/stats";
 
 interface TodayViewProps {
@@ -14,7 +15,11 @@ interface TodayViewProps {
   onToggle: (task: Task) => void;
   onCount: (task: Task, delta: number) => void;
   onMood: (mood: number | null) => void;
-  onOpenPlans: () => void;
+  onAddPlan: (horizon: PlanHorizon, text: string) => void;
+  onTogglePlanComplete: (item: PlanItem, completed: boolean) => void;
+  onTogglePlanDaily: (item: PlanItem, done: boolean) => void;
+  onDeletePlan: (item: PlanItem) => void;
+  onEditPlanText: (item: PlanItem, text: string) => void;
 }
 
 export function TodayView({
@@ -24,7 +29,11 @@ export function TodayView({
   onToggle,
   onCount,
   onMood,
-  onOpenPlans,
+  onAddPlan,
+  onTogglePlanComplete,
+  onTogglePlanDaily,
+  onDeletePlan,
+  onEditPlanText,
 }: TodayViewProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -46,8 +55,6 @@ export function TodayView({
     }
     return map;
   }, [active]);
-
-  const plansEarned = state.planProgress.reduce((s, p) => s + p.progress, 0);
 
   return (
     <section className={`today ${busy ? "is-busy" : ""}`}>
@@ -82,14 +89,6 @@ export function TodayView({
         </div>
       </header>
 
-      <button type="button" className="plans-chip" onClick={onOpenPlans}>
-        <span>
-          Plans · {Math.round((plansEarned / PLAN_HORIZONS.length) * 100)}% of
-          plan slots
-        </span>
-        <strong>Open →</strong>
-      </button>
-
       <div className="mood-panel mood-panel--compact">
         <div className="mood-panel__head">
           <span>How do you feel?</span>
@@ -108,6 +107,15 @@ export function TodayView({
           ))}
         </div>
       </div>
+
+      <PlanSlots
+        state={state}
+        onAdd={onAddPlan}
+        onToggleComplete={onTogglePlanComplete}
+        onToggleDaily={onTogglePlanDaily}
+        onDelete={onDeletePlan}
+        onEditText={onEditPlanText}
+      />
 
       {GROUPS.map((group) => {
         const tasks = byGroup.get(group.id) ?? [];

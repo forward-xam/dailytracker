@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PlansView } from "@/components/PlansView";
 import { StatsView } from "@/components/StatsView";
 import { TasksView } from "@/components/TasksView";
 import { TodayView } from "@/components/TodayView";
@@ -14,7 +13,7 @@ import type {
   TaskType,
 } from "@/lib/types";
 
-type Tab = "today" | "plans" | "stats" | "tasks";
+type Tab = "today" | "stats" | "tasks";
 
 function clientToday(): string {
   const now = new Date();
@@ -147,26 +146,19 @@ export function AppShell() {
             onToggle={onToggle}
             onCount={onCount}
             onMood={(mood) => void mutateDay({ mood })}
-            onOpenPlans={() => setTab("plans")}
-          />
-        )}
-        {tab === "plans" && (
-          <PlansView
-            state={state}
-            busy={busy}
-            onAdd={(horizon: PlanHorizon, text: string) =>
+            onAddPlan={(horizon: PlanHorizon, text: string) =>
               void mutatePlan({ horizon, text }, "POST")
             }
-            onToggleComplete={(item: PlanItem, completed: boolean) =>
+            onTogglePlanComplete={(item: PlanItem, completed: boolean) =>
               void mutatePlan({ id: item.id, completed }, "PATCH")
             }
-            onToggleDaily={(item: PlanItem, done: boolean) =>
+            onTogglePlanDaily={(item: PlanItem, done: boolean) =>
               void mutatePlan({ id: item.id, dailyDone: done }, "PATCH")
             }
-            onDelete={(item: PlanItem) =>
+            onDeletePlan={(item: PlanItem) =>
               void mutatePlan({ id: item.id, delete: true }, "PATCH")
             }
-            onEditText={(item: PlanItem, text: string) =>
+            onEditPlanText={(item: PlanItem, text: string) =>
               void mutatePlan({ id: item.id, text }, "PATCH")
             }
           />
@@ -194,13 +186,6 @@ export function AppShell() {
           onClick={() => setTab("today")}
         >
           Today
-        </button>
-        <button
-          type="button"
-          className={tab === "plans" ? "tab tab--on" : "tab"}
-          onClick={() => setTab("plans")}
-        >
-          Plans
         </button>
         <button
           type="button"

@@ -462,95 +462,103 @@ button {
   color: var(--orange);
 }
 
-.plans-chip {
+.mood-panel--compact {
+  padding: 0.75rem;
+}
+
+.plan-slots {
+  margin-bottom: 1rem;
+}
+
+.plan-slots__title {
+  margin-bottom: 0.65rem;
+}
+
+.plan-slots__title h2 {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.plan-slots__title p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.plan-slot {
+  margin-bottom: 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) + 2px);
+  background: color-mix(in srgb, var(--bg-elevated) 92%, black);
+  overflow: hidden;
+}
+
+.plan-slot--open {
+  border-color: color-mix(in srgb, var(--orange) 45%, var(--line));
+}
+
+.plan-slot__head {
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.85rem;
-  padding: 0.75rem 0.95rem;
-  border-radius: 12px;
-  border: 1px solid color-mix(in srgb, var(--orange) 35%, var(--line));
-  background: var(--orange-soft);
-  color: var(--text);
+  padding: 0.9rem 1rem;
+  border: 0;
+  background: transparent;
   text-align: left;
 }
 
-.plans-chip strong {
-  color: var(--orange);
-  font-weight: 600;
-}
-
-.mood-panel--compact {
-  padding: 0.75rem;
-}
-
-.plan-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.4rem;
-  margin-bottom: 0.85rem;
-}
-
-.plan-tab {
-  border: 1px solid var(--line);
-  background: var(--bg-elevated);
-  border-radius: 12px;
-  padding: 0.55rem 0.35rem;
+.plan-slot__labels {
   display: grid;
   gap: 0.2rem;
-  color: var(--muted);
-  font-size: 0.72rem;
+  min-width: 0;
 }
 
-.plan-tab strong {
-  color: var(--text);
+.plan-slot__labels strong {
   font-family: var(--font-display), sans-serif;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+}
+
+.plan-slot__labels span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.plan-slot__right {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.plan-slot__pct {
+  color: var(--orange);
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
   font-size: 0.95rem;
 }
 
-.plan-tab--on {
-  border-color: var(--orange);
-  background: var(--orange-soft);
-  color: var(--white);
-}
-
-.plan-tab--on strong {
+.plan-slot__chev {
   color: var(--orange);
-}
-
-.plan-panel__head {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-  margin-bottom: 0.85rem;
-}
-
-.plan-panel__head h2 {
-  margin: 0 0 0.25rem;
-  font-family: var(--font-display), sans-serif;
   font-size: 1.1rem;
+  width: 1rem;
+  text-align: center;
 }
 
-.plan-panel__head p {
-  margin: 0;
+.plan-slot__body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.plan-slot__hint {
+  margin: 0.75rem 0;
   color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.plan-panel__score {
-  text-align: right;
-  display: grid;
-  gap: 0.2rem;
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-.plan-panel__score strong {
-  color: var(--orange);
-  font-size: 0.95rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .plan-add {
@@ -611,13 +619,6 @@ button {
   background: var(--bg);
 }
 
-.plan-rules {
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.5;
-  font-size: 0.9rem;
-}
-
 .count-bar {
   margin-top: 0.45rem;
   height: 4px;
@@ -667,11 +668,11 @@ button {
   left: 50%;
   bottom: 1rem;
   transform: translateX(-50%);
-  width: min(480px, calc(100% - 1.5rem));
+  width: min(420px, calc(100% - 1.5rem));
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.25rem;
-  padding: 0.35rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  padding: 0.4rem;
   border-radius: 999px;
   background: rgba(18, 18, 18, 0.88);
   border: 1px solid var(--line);
@@ -684,9 +685,9 @@ button {
   background: transparent;
   color: var(--muted);
   border-radius: 999px;
-  padding: 0.7rem 0.25rem;
+  padding: 0.75rem 0.5rem;
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   transition: background 0.2s ease, color 0.2s ease;
 }
 
@@ -969,17 +970,5 @@ button {
     grid-column: 2;
     flex-direction: row;
     justify-content: flex-end;
-  }
-
-  .plan-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .plan-panel__head {
-    flex-direction: column;
-  }
-
-  .plan-panel__score {
-    text-align: left;
   }
 }
