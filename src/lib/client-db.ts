@@ -194,8 +194,8 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function loadBootstrap(): Promise<Store | null> {
   try {
-    const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
-    const res = await fetch(`${base}/bootstrap-store.json`, { cache: "no-store" });
+    const url = new URL("bootstrap-store.json", window.location.href).href;
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return null;
     return migrateStore((await res.json()) as Store);
   } catch {
