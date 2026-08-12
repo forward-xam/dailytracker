@@ -3,6 +3,7 @@ import { buildAppState } from "./stats";
 import type {
   AppState,
   DayLog,
+  HistoryEntry,
   PlanHorizon,
   PlanItem,
   Store,
@@ -31,6 +32,7 @@ export function defaultStore(): Store {
     tasks: structuredClone(SEED_TASKS),
     days: {},
     plans: emptyPlans(),
+    completedHistory: [],
   };
 }
 
@@ -39,6 +41,7 @@ export function migrateStore(parsed: Store): Store {
   for (const key of ["10y", "1y", "1m", "1d"] as PlanHorizon[]) {
     if (!parsed.plans[key]) parsed.plans[key] = [];
   }
+  if (!parsed.completedHistory) parsed.completedHistory = [];
   for (const day of Object.values(parsed.days ?? {})) {
     if (!day.planDone) day.planDone = {};
   }
@@ -203,6 +206,52 @@ async function loadBootstrap(): Promise<Store | null> {
   }
 }
 
+function todayKey(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Move 1-day plans completed on a previous day into history and off today's list. */
+export function rolloverCompletedDailyPlans(today: string): boolean {
+  if (!memory.completedHistory) memory.completedHistory = [];
+  const remaining: PlanItem[] = [];
+  let changed = false;
+
+  for (const item of memory.plans["1d"] ?? []) {
+    let completedOn: string | null = null;
+    for (const [date, day] of Object.entries(memory.days)) {
+      if (date < today && day.planDone?.[item.id]) {
+        if (!completedOn || date > completedOn) completedOn = date;
+      }
+    }
+
+    if (completedOn) {
+      const entry: HistoryEntry = {
+        id: `daily-${item.id}-${completedOn}`,
+        title: item.text,
+        completedOn,
+        source: "daily-plan",
+        horizon: "1d",
+        taskId: item.id,
+      };
+      if (!memory.completedHistory.some((h) => h.id === entry.id)) {
+        memory.completedHistory.push(entry);
+      }
+      changed = true;
+    } else {
+      remaining.push(item);
+    }
+  }
+
+  if (changed) {
+    memory.plans["1d"] = remaining;
+  }
+  return changed;
+}
+
 export async function initClientDb(): Promise<{
   store: Store;
   syncId: string;
@@ -231,6 +280,11 @@ export async function initClientDb(): Promise<{
     void pushRemote(syncId, memory, now);
   }
 
+  if (!memory.completedHistory) memory.completedHistory = [];
+  if (rolloverCompletedDailyPlans(todayKey())) {
+    schedulePush();
+  }
+
   return { store: memory, syncId, share: shareUrl(syncId) };
 }
 
@@ -252,6 +306,9 @@ function dayRef(date: string): DayLog {
 }
 
 export function getState(date: string): AppState {
+  if (rolloverCompletedDailyPlans(date)) {
+    schedulePush();
+  }
   return buildAppState(memory, date);
 }
 
@@ -336,10 +393,17 @@ export function patchPlanLocal(
   for (const horizon of Object.keys(memory.plans) as PlanHorizon[]) {
     const idx = memory.plans[horizon].findIndex((p) => p.id === id);
     if (idx !== -1) {
-      memory.plans[horizon][idx] = {
-        ...memory.plans[horizon][idx],
+      const current = memory.plans[horizon][idx];
+      const next: PlanItem = {
+        ...current,
         ...patch,
       };
+      if (patch.completed === true) {
+        next.completedOn = date;
+      } else if (patch.completed === false) {
+        next.completedOn = null;
+      }
+      memory.plans[horizon][idx] = next;
       schedulePush();
       break;
     }

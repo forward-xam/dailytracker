@@ -31,7 +31,20 @@ export interface PlanItem {
   text: string;
   horizon: PlanHorizon;
   completed: boolean;
+  /** YYYY-MM-DD when a long-term plan was marked complete */
+  completedOn?: string | null;
   createdAt: string;
+}
+
+export type HistorySource = "daily-plan" | "plan" | "routine";
+
+export interface HistoryEntry {
+  id: string;
+  title: string;
+  completedOn: string;
+  source: HistorySource;
+  horizon?: PlanHorizon;
+  taskId?: string;
 }
 
 export interface DayLog {
@@ -46,6 +59,8 @@ export interface Store {
   tasks: Task[];
   days: Record<string, DayLog>;
   plans: Record<PlanHorizon, PlanItem[]>;
+  /** Archived completed daily plans (and other logged completions) */
+  completedHistory: HistoryEntry[];
 }
 
 export interface GroupMeta {
@@ -82,7 +97,7 @@ export const PLAN_HORIZONS: { id: PlanHorizon; label: string; hint: string }[] =
     {
       id: "1d",
       label: "1-day plans",
-      hint: "Today’s checklist. Each finished item adds to %.",
+      hint: "Today’s checklist. Finished items leave this list tomorrow and move to Completed.",
     },
   ];
 
@@ -121,4 +136,6 @@ export interface AppState {
   taskStreaks: Record<string, number>;
   plans: Record<PlanHorizon, PlanItem[]>;
   planProgress: PlanHorizonProgress[];
+  /** Newest first — completed daily plans, long-term plans, and routines */
+  completedLog: HistoryEntry[];
 }

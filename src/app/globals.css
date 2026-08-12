@@ -691,16 +691,68 @@ button {
   cursor: not-allowed;
 }
 
+.history-day__title {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0.15rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.history-item:last-child {
+  border-bottom: 0;
+}
+
+.history-item__main {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.history-item__main strong {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.history-item__main span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.history-item__date {
+  flex-shrink: 0;
+  color: var(--orange);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .tabbar {
   position: fixed;
   left: 50%;
   bottom: 1rem;
   transform: translateX(-50%);
-  width: min(420px, calc(100% - 1.5rem));
+  width: min(480px, calc(100% - 1.5rem));
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.35rem;
-  padding: 0.4rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+  padding: 0.35rem;
   border-radius: 999px;
   background: rgba(18, 18, 18, 0.88);
   border: 1px solid var(--line);
@@ -713,9 +765,9 @@ button {
   background: transparent;
   color: var(--muted);
   border-radius: 999px;
-  padding: 0.75rem 0.5rem;
+  padding: 0.7rem 0.25rem;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   transition: background 0.2s ease, color 0.2s ease;
 }
 

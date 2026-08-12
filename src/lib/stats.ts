@@ -2,6 +2,7 @@ import type {
   AppState,
   DayLog,
   DayStats,
+  HistoryEntry,
   PlanHorizon,
   PlanHorizonProgress,
   PlanItem,
@@ -61,7 +62,9 @@ export function planHorizonProgress(
 
   let completedCount = 0;
   if (horizon === "1d") {
-    completedCount = items.filter((item) => day?.planDone?.[item.id]).length;
+    completedCount = items.filter(
+      (item) => item.completed || Boolean(day?.planDone?.[item.id]),
+    ).length;
   } else {
     completedCount = items.filter((item) => item.completed).length;
   }
@@ -77,11 +80,48 @@ export function planHorizonProgress(
   };
 }
 
+function plansForDate(
+  date: string,
+  horizon: PlanHorizon,
+  plans: Store["plans"],
+  completedHistory: HistoryEntry[],
+): PlanItem[] {
+  if (horizon !== "1d") {
+    return plans[horizon] ?? [];
+  }
+
+  const active = (plans["1d"] ?? []).filter((item) => {
+    const created = item.createdAt.slice(0, 10);
+    return !created || created <= date;
+  });
+
+  const archivedThatDay = completedHistory
+    .filter(
+      (entry) =>
+        entry.source === "daily-plan" &&
+        entry.horizon === "1d" &&
+        entry.completedOn === date,
+    )
+    .map(
+      (entry): PlanItem => ({
+        id: entry.taskId ?? entry.id,
+        text: entry.title,
+        horizon: "1d",
+        completed: true,
+        completedOn: entry.completedOn,
+        createdAt: `${entry.completedOn}T12:00:00.000Z`,
+      }),
+    );
+
+  return [...active, ...archivedThatDay];
+}
+
 export function computeDayStats(
   date: string,
   tasks: Task[],
   day: DayLog | undefined,
   plans: Store["plans"],
+  completedHistory: HistoryEntry[] = [],
 ): DayStats {
   const active = activeTasks(tasks);
   let earned = 0;
@@ -90,7 +130,8 @@ export function computeDayStats(
   }
 
   for (const meta of PLAN_HORIZONS) {
-    earned += planHorizonProgress(meta.id, plans[meta.id] ?? [], day).progress;
+    const items = plansForDate(date, meta.id, plans, completedHistory);
+    earned += planHorizonProgress(meta.id, items, day).progress;
   }
 
   const total = active.length + PLAN_HORIZONS.length;
@@ -102,6 +143,70 @@ export function computeDayStats(
     percent,
     mood: day?.mood ?? null,
   };
+}
+
+export function buildCompletedLog(
+  store: Store,
+  today: string,
+): HistoryEntry[] {
+  const entries: HistoryEntry[] = [...(store.completedHistory ?? [])];
+
+  for (const horizon of ["10y", "1y", "1m"] as PlanHorizon[]) {
+    for (const item of store.plans[horizon] ?? []) {
+      if (!item.completed) continue;
+      const completedOn = item.completedOn ?? item.createdAt.slice(0, 10);
+      entries.push({
+        id: `plan-${item.id}`,
+        title: item.text,
+        completedOn,
+        source: "plan",
+        horizon,
+      });
+    }
+  }
+
+  const taskMap = new Map(store.tasks.map((t) => [t.id, t]));
+  for (const [date, day] of Object.entries(store.days)) {
+    for (const [taskId, completion] of Object.entries(day.completions ?? {})) {
+      const task = taskMap.get(taskId);
+      if (!task || task.hidden || task.archived) continue;
+      if (!isTaskComplete(task, completion)) continue;
+      entries.push({
+        id: `routine-${date}-${taskId}`,
+        title: task.title,
+        completedOn: date,
+        source: "routine",
+        taskId,
+      });
+    }
+
+    // Still-active 1d plans completed today stay in the list; log them too
+    if (date === today) {
+      for (const item of store.plans["1d"] ?? []) {
+        if (!day.planDone?.[item.id]) continue;
+        entries.push({
+          id: `daily-today-${item.id}-${date}`,
+          title: item.text,
+          completedOn: date,
+          source: "daily-plan",
+          horizon: "1d",
+        });
+      }
+    }
+  }
+
+  const seen = new Set<string>();
+  return entries
+    .filter((entry) => {
+      if (seen.has(entry.id)) return false;
+      seen.add(entry.id);
+      return true;
+    })
+    .sort((a, b) => {
+      const byDate = b.completedOn.localeCompare(a.completedOn);
+      if (byDate !== 0) return byDate;
+      return a.title.localeCompare(b.title);
+    });
 }
 
 function shiftDate(date: string, days: number): string {
@@ -186,6 +291,7 @@ export function buildAppState(store: Store, today: string): AppState {
     "1m": [],
     "1d": [],
   };
+  const completedHistory = store.completedHistory ?? [];
 
   const day = store.days[today] ?? {
     date: today,
@@ -208,6 +314,7 @@ export function buildAppState(store: Store, today: string): AppState {
       store.tasks,
       store.days[date],
       plans,
+      completedHistory,
     );
   }
 
@@ -216,7 +323,11 @@ export function buildAppState(store: Store, today: string): AppState {
   );
 
   const planProgress = PLAN_HORIZONS.map((meta) =>
-    planHorizonProgress(meta.id, plans[meta.id] ?? [], day),
+    planHorizonProgress(
+      meta.id,
+      plansForDate(today, meta.id, plans, completedHistory),
+      day,
+    ),
   );
 
   return {
@@ -228,6 +339,7 @@ export function buildAppState(store: Store, today: string): AppState {
     taskStreaks: computeTaskStreaks(today, store.tasks, store.days),
     plans,
     planProgress,
+    completedLog: buildCompletedLog(store, today),
   };
 }
 

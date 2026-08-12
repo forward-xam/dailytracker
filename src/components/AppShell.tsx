@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { HistoryView } from "@/components/HistoryView";
 import { StatsView } from "@/components/StatsView";
 import { TasksView } from "@/components/TasksView";
 import { TodayView } from "@/components/TodayView";
@@ -26,7 +27,7 @@ import type {
   TaskType,
 } from "@/lib/types";
 
-type Tab = "today" | "stats" | "tasks";
+type Tab = "today" | "history" | "stats" | "tasks";
 
 function clientToday(): string {
   const now = new Date();
@@ -151,6 +152,7 @@ export function AppShell() {
             }
           />
         )}
+        {tab === "history" && <HistoryView state={state} />}
         {tab === "stats" && <StatsView state={state} today={date} />}
         {tab === "tasks" && (
           <TasksView
@@ -176,6 +178,13 @@ export function AppShell() {
           onClick={() => setTab("today")}
         >
           Today
+        </button>
+        <button
+          type="button"
+          className={tab === "history" ? "tab tab--on" : "tab"}
+          onClick={() => setTab("history")}
+        >
+          Done
         </button>
         <button
           type="button"
