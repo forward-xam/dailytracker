@@ -691,6 +691,102 @@ button {
   cursor: not-allowed;
 }
 
+.task-row--tapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  padding: 0.9rem;
+}
+
+.tapper {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.tapper__undo {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--bg-soft);
+  color: var(--muted);
+  font-size: 1.15rem;
+  font-weight: 700;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.tapper__undo:disabled {
+  opacity: 0.35;
+}
+
+.tapper__hit {
+  width: 100%;
+  min-height: 132px;
+  height: clamp(132px, 34vw, 156px);
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff8a3d 0%, var(--orange) 55%, var(--orange-deep) 100%);
+  color: #111;
+  display: grid;
+  place-content: center;
+  gap: 0.1rem;
+  box-shadow:
+    0 10px 24px rgba(255, 106, 26, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: transform 0.08s ease, filter 0.08s ease;
+}
+
+.tapper__hit:active:not(:disabled) {
+  transform: scale(0.97);
+  filter: brightness(0.96);
+}
+
+.tapper__hit:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.tapper__plus {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1;
+  font-family: var(--font-display), sans-serif;
+}
+
+.tapper__label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .task-row--tapper {
+    grid-template-columns: 1fr;
+  }
+
+  .tapper {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .tapper__undo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .tapper__hit {
+    min-height: 140px;
+    height: 140px;
+  }
+}
+
 .history-day__title {
   margin: 0 0 0.75rem;
   font-family: var(--font-display), sans-serif;
@@ -1042,13 +1138,18 @@ button {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
-  .task-row {
+  .task-row:not(.task-row--tapper) {
     grid-template-columns: auto 1fr;
   }
 
-  .count-actions {
+  .task-row:not(.task-row--tapper) .count-actions {
     grid-column: 2;
     flex-direction: row;
     justify-content: flex-end;
+  }
+
+  .tapper__hit {
+    min-height: 148px;
+    height: 148px;
   }
 }

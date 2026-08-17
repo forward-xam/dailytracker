@@ -23,6 +23,65 @@ export function TaskRow({
       : Boolean(completion?.done);
   const count = completion?.count ?? 0;
   const target = task.target ?? 1;
+  const isBigTapper =
+    task.type === "count" &&
+    (task.id === "t29" ||
+      target >= 500 ||
+      /affirmation/i.test(task.title));
+
+  if (isBigTapper) {
+    return (
+      <div className={`task-row task-row--tapper ${done ? "task-row--done" : ""}`}>
+        <div className="task-row__body">
+          <div className="task-row__title">{task.title}</div>
+          <div className="task-row__meta">
+            <span>
+              {count} / {target}
+              {count > 0 && count < target && (
+                <span className="partial-chip">
+                  {" "}
+                  · {Math.round((count / target) * 100)}% of task
+                </span>
+              )}
+            </span>
+            {streak > 0 && (
+              <span className="streak-chip">
+                {streak} day{streak === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+          <div className="count-bar" aria-hidden>
+            <div
+              className="count-bar__fill"
+              style={{ width: `${Math.min(100, (count / target) * 100)}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="tapper">
+          <button
+            type="button"
+            className="tapper__undo"
+            onClick={() => onCount(task, -1)}
+            disabled={count <= 0}
+            aria-label="Undo one affirmation"
+          >
+            −1
+          </button>
+          <button
+            type="button"
+            className="tapper__hit"
+            onClick={() => onCount(task, 1)}
+            disabled={count >= target}
+            aria-label="Add one affirmation"
+          >
+            <span className="tapper__plus">+</span>
+            <span className="tapper__label">Tap</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`task-row ${done ? "task-row--done" : ""}`}>
