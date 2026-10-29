@@ -62,6 +62,33 @@ export function migrateStore(parsed: Store): Store {
       task.target = 2000;
     }
   }
+
+  const ensureTasks = [
+    {
+      id: "t30",
+      title: "Do not bite or scratch my nails",
+      group: "body" as const,
+      type: "check" as const,
+      order: 14.5,
+      hidden: false,
+      archived: false,
+    },
+    {
+      id: "t31",
+      title: "Do not eat any sugar",
+      group: "food" as const,
+      type: "check" as const,
+      order: 18.5,
+      hidden: false,
+      archived: false,
+    },
+  ];
+  for (const task of ensureTasks) {
+    if (!parsed.tasks.some((t) => t.id === task.id)) {
+      parsed.tasks.push(task);
+    }
+  }
+
   return parsed;
 }
 
