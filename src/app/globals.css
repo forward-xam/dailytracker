@@ -886,6 +886,92 @@ button {
   padding: 1rem;
 }
 
+.stats-period {
+  margin: -0.35rem 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.day-detail__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.day-detail__head h2 {
+  margin: 0.25rem 0 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.day-detail__pct {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 8vw, 2.6rem);
+  font-weight: 800;
+  color: var(--orange);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.day-detail__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.day-detail__bar-wrap {
+  height: 10px;
+  border-radius: 999px;
+  background: #222;
+  overflow: hidden;
+}
+
+.day-detail__bar {
+  height: 100%;
+  background: linear-gradient(90deg, #7a3a12, var(--orange));
+  transition: width 0.35s ease;
+}
+
+.heat-grid--full {
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+}
+
+.heat {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.heat--selected {
+  outline: 2px solid var(--white);
+  outline-offset: 1px;
+}
+
+.day-list__btn {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0.45rem 0.35rem;
+  text-align: left;
+  color: inherit;
+}
+
+.day-list__btn--on {
+  border-color: color-mix(in srgb, var(--orange) 45%, var(--line));
+  background: var(--orange-soft);
+}
+
 .panel h2 {
   margin: 0 0 0.85rem;
   font-family: var(--font-display), sans-serif;
@@ -1126,7 +1212,8 @@ button {
 }
 
 @media (max-width: 640px) {
-  .day-list__item {
+  .day-list__item,
+  .day-list__btn {
     grid-template-columns: 1fr auto;
   }
 
@@ -1134,8 +1221,9 @@ button {
     grid-column: 1 / -1;
   }
 
-  .heat-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+  .heat-grid,
+  .heat-grid--full {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .task-row:not(.task-row--tapper) {

@@ -303,8 +303,13 @@ export function buildAppState(store: Store, today: string): AppState {
 
   const historyDates = new Set([...Object.keys(store.days), today]);
 
-  for (let i = 0; i < 60; i += 1) {
-    historyDates.add(shiftDate(today, -i));
+  // Fill every day from the earliest recorded activity through today
+  const earliest =
+    [...historyDates].sort()[0] ?? today;
+  let cursor = earliest;
+  while (cursor <= today) {
+    historyDates.add(cursor);
+    cursor = shiftDate(cursor, 1);
   }
 
   const historyByDate: Record<string, DayStats> = {};
@@ -318,9 +323,9 @@ export function buildAppState(store: Store, today: string): AppState {
     );
   }
 
-  const history = Object.values(historyByDate).sort((a, b) =>
-    a.date.localeCompare(b.date),
-  );
+  const history = Object.values(historyByDate)
+    .filter((h) => h.date <= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   const planProgress = PLAN_HORIZONS.map((meta) =>
     planHorizonProgress(
