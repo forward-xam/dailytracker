@@ -1091,6 +1091,46 @@ button {
   color: var(--orange);
 }
 
+.totals-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.totals-item {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.totals-item:last-child {
+  border-bottom: 0;
+}
+
+.totals-item__title {
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 0.35rem;
+}
+
+.totals-item__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.9rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.totals-item__stats strong {
+  color: var(--orange);
+  font-weight: 700;
+}
+
+.totals-item__count strong {
+  font-variant-numeric: tabular-nums;
+}
+
 .empty {
   color: var(--muted);
 }

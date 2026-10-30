@@ -10,6 +10,7 @@ import type {
   Store,
   Task,
   TaskCompletion,
+  TaskLifetimeStats,
 } from "./types";
 import {
   PLAN_COMPLETE_SHARE,
@@ -284,6 +285,44 @@ export function computeTaskStreaks(
   return result;
 }
 
+export function computeTaskTotals(
+  tasks: Task[],
+  days: Record<string, DayLog>,
+  streaks: Record<string, number>,
+): TaskLifetimeStats[] {
+  return activeTasks(tasks)
+    .map((task) => {
+      let daysCompleted = 0;
+      let totalCount = 0;
+      for (const day of Object.values(days)) {
+        const completion = day.completions?.[task.id];
+        if (!completion) continue;
+        if (task.type === "count") {
+          totalCount += completion.count ?? 0;
+        }
+        if (isTaskComplete(task, completion)) {
+          daysCompleted += 1;
+        }
+      }
+      return {
+        id: task.id,
+        title: task.title,
+        type: task.type,
+        daysCompleted,
+        streak: streaks[task.id] ?? 0,
+        totalCount,
+        target: task.target,
+      };
+    })
+    .filter((t) => t.daysCompleted > 0 || t.totalCount > 0 || t.streak > 0)
+    .sort((a, b) => {
+      if (b.daysCompleted !== a.daysCompleted) {
+        return b.daysCompleted - a.daysCompleted;
+      }
+      return b.totalCount - a.totalCount;
+    });
+}
+
 export function buildAppState(store: Store, today: string): AppState {
   const plans = store.plans ?? {
     "10y": [],
@@ -335,13 +374,16 @@ export function buildAppState(store: Store, today: string): AppState {
     ),
   );
 
+  const taskStreaks = computeTaskStreaks(today, store.tasks, store.days);
+
   return {
     tasks: store.tasks.sort((a, b) => a.order - b.order),
     today: day,
     todayStats: historyByDate[today],
     history,
     streak: computeStreak(today, historyByDate),
-    taskStreaks: computeTaskStreaks(today, store.tasks, store.days),
+    taskStreaks,
+    taskTotals: computeTaskTotals(store.tasks, store.days, taskStreaks),
     plans,
     planProgress,
     completedLog: buildCompletedLog(store, today),

@@ -127,6 +127,20 @@ export interface PlanHorizonProgress {
   progress: number;
 }
 
+/** Lifetime totals for one routine task across all recorded days. */
+export interface TaskLifetimeStats {
+  id: string;
+  title: string;
+  type: TaskType;
+  /** Days the task was fully completed */
+  daysCompleted: number;
+  /** Current consecutive-day streak */
+  streak: number;
+  /** Sum of counts for count-type tasks (e.g. total affirmations) */
+  totalCount: number;
+  target?: number;
+}
+
 export interface AppState {
   tasks: Task[];
   today: DayLog;
@@ -134,6 +148,7 @@ export interface AppState {
   history: DayStats[];
   streak: StreakInfo;
   taskStreaks: Record<string, number>;
+  taskTotals: TaskLifetimeStats[];
   plans: Record<PlanHorizon, PlanItem[]>;
   planProgress: PlanHorizonProgress[];
   /** Newest first — completed daily plans, long-term plans, and routines */

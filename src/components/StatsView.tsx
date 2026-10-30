@@ -112,19 +112,6 @@ export function StatsView({ state, today }: StatsViewProps) {
     [allDays, today],
   );
 
-  const topStreaks = useMemo(() => {
-    return state.tasks
-      .filter((t) => !t.archived && !t.hidden)
-      .map((t) => ({
-        id: t.id,
-        title: t.title,
-        streak: state.taskStreaks[t.id] ?? 0,
-      }))
-      .filter((t) => t.streak > 0)
-      .sort((a, b) => b.streak - a.streak)
-      .slice(0, 8);
-  }, [state.tasks, state.taskStreaks]);
-
   const periodLabel =
     allDays.length <= 1
       ? "Today"
@@ -273,17 +260,37 @@ export function StatsView({ state, today }: StatsViewProps) {
       </div>
 
       <div className="panel">
-        <h2>Task streaks</h2>
-        {topStreaks.length === 0 ? (
+        <h2>Task totals</h2>
+        <p className="stats-period">
+          Days completed for each task — and lifetime totals for counters like
+          affirmations.
+        </p>
+        {state.taskTotals.length === 0 ? (
           <p className="empty">
-            Complete the same task on consecutive days to build a streak.
+            Complete tasks to build lifetime totals here.
           </p>
         ) : (
-          <ul className="streak-list">
-            {topStreaks.map((item) => (
-              <li key={item.id}>
-                <span>{item.title}</span>
-                <strong>{item.streak}d</strong>
+          <ul className="totals-list">
+            {state.taskTotals.map((item) => (
+              <li key={item.id} className="totals-item">
+                <div className="totals-item__title">{item.title}</div>
+                <div className="totals-item__stats">
+                  <span>
+                    <strong>{item.daysCompleted}</strong> day
+                    {item.daysCompleted === 1 ? "" : "s"} done
+                  </span>
+                  {item.streak > 0 && (
+                    <span>
+                      streak <strong>{item.streak}</strong>d
+                    </span>
+                  )}
+                  {item.type === "count" && (
+                    <span className="totals-item__count">
+                      total <strong>{item.totalCount.toLocaleString()}</strong>
+                      {item.target ? ` / ${item.target} per day` : ""}
+                    </span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
