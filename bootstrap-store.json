@@ -1,0 +1,537 @@
+{
+  "tasks": [
+    {
+      "id": "t01",
+      "title": "Morning visualization",
+      "group": "morning",
+      "type": "check",
+      "order": 1,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t02",
+      "title": "Read a story about me and a statement about me",
+      "group": "morning",
+      "type": "check",
+      "order": 2,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t03",
+      "title": "Write a plan for 10 years, 1 year, and 1 day",
+      "group": "morning",
+      "type": "check",
+      "order": 3,
+      "hidden": true,
+      "archived": true
+    },
+    {
+      "id": "t04",
+      "title": "Pray 10 times in the morning",
+      "group": "morning",
+      "type": "count",
+      "target": 10,
+      "order": 4,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t05",
+      "title": "Look at visualization #1",
+      "group": "morning",
+      "type": "check",
+      "order": 5,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t06",
+      "title": "Give a valuable word to someone",
+      "group": "body",
+      "type": "check",
+      "order": 6,
+      "hidden": true,
+      "archived": true
+    },
+    {
+      "id": "t07",
+      "title": "Brush your teeth",
+      "group": "body",
+      "type": "check",
+      "order": 7,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t08",
+      "title": "Take a shower",
+      "group": "body",
+      "type": "check",
+      "order": 8,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t09",
+      "title": "Drink a glass of water",
+      "group": "body",
+      "type": "check",
+      "order": 9,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t10",
+      "title": "Drink a scoop of protein",
+      "group": "body",
+      "type": "check",
+      "order": 10,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t11",
+      "title": "Work out in the gym or do 45 minutes on your own",
+      "group": "body",
+      "type": "check",
+      "order": 11,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t12",
+      "title": "Back exercises (3 sets)",
+      "group": "body",
+      "type": "count",
+      "target": 3,
+      "order": 12,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t13",
+      "title": "Put cream on your fingers",
+      "group": "body",
+      "type": "check",
+      "order": 13,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t14",
+      "title": "Do Kegel exercises with the mobile app",
+      "group": "body",
+      "type": "check",
+      "order": 14,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t15",
+      "title": "Eat breakfast",
+      "group": "food",
+      "type": "check",
+      "order": 15,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t16",
+      "title": "Eat cottage cheese with fruits",
+      "group": "food",
+      "type": "check",
+      "order": 16,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t17",
+      "title": "Eat lunch",
+      "group": "food",
+      "type": "check",
+      "order": 17,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t18",
+      "title": "Eat dinner",
+      "group": "food",
+      "type": "check",
+      "order": 18,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t19",
+      "title": "Do my daily plans",
+      "group": "work",
+      "type": "check",
+      "order": 19,
+      "hidden": true,
+      "archived": true
+    },
+    {
+      "id": "t20",
+      "title": "Post 3 times on social media (teach English)",
+      "group": "work",
+      "type": "count",
+      "target": 3,
+      "order": 20,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t21",
+      "title": "Contact 3 men with successful families, businesses, and healthy marriages",
+      "group": "work",
+      "type": "count",
+      "target": 3,
+      "order": 21,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t22",
+      "title": "Leave 10 comments on popular Ukrainian pages in Chicago (10k+ followers)",
+      "group": "work",
+      "type": "count",
+      "target": 10,
+      "order": 22,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t23",
+      "title": "Repost my video on Facebook to 20 US groups",
+      "group": "work",
+      "type": "count",
+      "target": 20,
+      "order": 23,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t24",
+      "title": "Contact 20 new drivers",
+      "group": "work",
+      "type": "count",
+      "target": 20,
+      "order": 24,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t25",
+      "title": "Add all personal finances to Excel (income & outcome)",
+      "group": "work",
+      "type": "check",
+      "order": 25,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t26",
+      "title": "Pray 10 times in the evening",
+      "group": "evening",
+      "type": "count",
+      "target": 10,
+      "order": 26,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t27",
+      "title": "Brush teeth before going to bed",
+      "group": "evening",
+      "type": "check",
+      "order": 27,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t28",
+      "title": "Go to bed by 10 pm",
+      "group": "evening",
+      "type": "check",
+      "order": 28,
+      "hidden": false,
+      "archived": false
+    },
+    {
+      "id": "t29",
+      "title": "Repeat affirmations during the day",
+      "group": "close",
+      "type": "count",
+      "target": 2000,
+      "order": 29,
+      "hidden": false,
+      "archived": false
+    }
+  ],
+  "days": {
+    "2026-07-23": {
+      "date": "2026-07-23",
+      "completions": {
+        "t04": {
+          "count": 10
+        },
+        "t20": {
+          "count": 0
+        },
+        "t15": {
+          "done": true
+        },
+        "t16": {
+          "done": true
+        },
+        "t10": {
+          "done": true
+        },
+        "t09": {
+          "done": true
+        },
+        "t11": {
+          "done": true
+        },
+        "t29": {
+          "count": 0
+        },
+        "t12": {
+          "count": 0
+        },
+        "t01": {
+          "done": true
+        },
+        "t02": {
+          "done": true
+        },
+        "t17": {
+          "done": true
+        },
+        "t13": {
+          "done": false
+        }
+      },
+      "planDone": {
+        "pmrxrwhnumh02": true
+      },
+      "mood": 5
+    }
+  },
+  "plans": {
+    "10y": [
+      {
+        "id": "pmrxsdet7dp5f",
+        "text": "Buy a house in Winetka",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T17:29:31.963Z"
+      },
+      {
+        "id": "pmrxsdo1mp6lb",
+        "text": "Buy a Tesla car",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T17:29:43.930Z"
+      },
+      {
+        "id": "pmrxsdtx72y80",
+        "text": "Get to 95 kg mass",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T17:29:51.547Z"
+      },
+      {
+        "id": "pmrxsdxqrowof",
+        "text": "Have 3 kids",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T17:29:56.499Z"
+      },
+      {
+        "id": "pmrxse5zecjov",
+        "text": "Make 100k a year",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T17:30:07.178Z"
+      },
+      {
+        "id": "pmrxtmi1ddcu0",
+        "text": "Get married with a loving, supporting woman, from a full family, that wants to have a family",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:04:35.665Z"
+      },
+      {
+        "id": "pmrxtn0im7g7p",
+        "text": "Grow my yellow SCHOOL to the point where we have 10,000 users, ex users and I make $30,000 from that school",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:04:59.614Z"
+      },
+      {
+        "id": "pmrxtnhfm1zp0",
+        "text": "Develop the Chicago creator club and the Shanghai Lucas club to the point where we have over 2000 members and I also make over $30,000 a month from those clubs",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:05:21.538Z"
+      },
+      {
+        "id": "pmrxtql7ucipi",
+        "text": "Have Citizen chip in the United States",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:07:46.410Z"
+      },
+      {
+        "id": "pmrxtrg8kndd9",
+        "text": "Have 1 million followers on social media, for language teaching",
+        "horizon": "10y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:08:26.612Z"
+      }
+    ],
+    "1y": [
+      {
+        "id": "pmrxtx7pwaqn0",
+        "text": "Get married with a loving lady, who wants to have three children, who wants a family",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:12:55.508Z"
+      },
+      {
+        "id": "pmrxtxdo1dqwo",
+        "text": "By myself when you come a better car",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:13:03.217Z"
+      },
+      {
+        "id": "pmrxtxmdvffkk",
+        "text": "Buy a condo or an apartment for under 250,000",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:13:14.515Z"
+      },
+      {
+        "id": "pmrxtxz2bqmtp",
+        "text": "Develop my yellow school to the point, where I will have over 1000 both off-line and online students",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:13:30.947Z"
+      },
+      {
+        "id": "pmrxty8dd2pe5",
+        "text": "Have 50 off-line students in Chicago",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:13:43.009Z"
+      },
+      {
+        "id": "pmrxtz22rutzn",
+        "text": "Get to 95 kg body mass",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:14:21.507Z"
+      },
+      {
+        "id": "pmrxtzru25gof",
+        "text": "Get myself a good status, that would be different from you for you",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:14:54.890Z"
+      },
+      {
+        "id": "pmrxu0accb4cz",
+        "text": "Have a working app for the Shanghai club, invite all of the members there, where members can connect with businesses, and just chat there, see each each other’s profiles",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:15:18.876Z"
+      },
+      {
+        "id": "pmrxu0rsptbsw",
+        "text": "Have the same app for the Chicago creators club, we’re all social media creators will be there, chatting, talking, organizing, meet ups, and connecting with local businesses",
+        "horizon": "1y",
+        "completed": false,
+        "createdAt": "2026-07-23T18:15:41.497Z"
+      }
+    ],
+    "1m": [
+      {
+        "id": "pmrxu1d4wtz7o",
+        "text": "Get a preapproval from Bahu Slava, check some apartments, some condominiums with Realtor realtors",
+        "horizon": "1m",
+        "completed": false,
+        "createdAt": "2026-07-23T18:16:09.152Z"
+      },
+      {
+        "id": "pmrxu24e37x9n",
+        "text": "Get five more owner operator Trucks, that will be working with me and Ihor, Лид4 percent",
+        "horizon": "1m",
+        "completed": false,
+        "createdAt": "2026-07-23T18:16:44.475Z"
+      },
+      {
+        "id": "pmrxu5asndcxi",
+        "text": "Have $20,000 saved on my bank account",
+        "horizon": "1m",
+        "completed": false,
+        "createdAt": "2026-07-23T18:19:12.743Z"
+      },
+      {
+        "id": "pmrxu7n07ls9r",
+        "text": "Get to 90 kg",
+        "horizon": "1m",
+        "completed": false,
+        "createdAt": "2026-07-23T18:21:01.879Z"
+      },
+      {
+        "id": "pmrxuajavq40z",
+        "text": "Get 38 English English student off-line in Chicago",
+        "horizon": "1m",
+        "completed": false,
+        "createdAt": "2026-07-23T18:23:17.047Z"
+      }
+    ],
+    "1d": [
+      {
+        "id": "pmrxv1ikn2nny",
+        "text": "Calculate money that my students have on Saturdays, and Olga, Liubomir",
+        "horizon": "1d",
+        "completed": false,
+        "createdAt": "2026-07-23T18:44:15.815Z"
+      },
+      {
+        "id": "pmrxv1oy9v7ld",
+        "text": "Book all loads for today",
+        "horizon": "1d",
+        "completed": false,
+        "createdAt": "2026-07-23T18:44:24.081Z"
+      },
+      {
+        "id": "pmrxv1zl7k2lv",
+        "text": "Send all requested documents to Bogola",
+        "horizon": "1d",
+        "completed": false,
+        "createdAt": "2026-07-23T18:44:37.867Z"
+      },
+      {
+        "id": "pmrxv2btm3iia",
+        "text": "Wash all boxes",
+        "horizon": "1d",
+        "completed": false,
+        "createdAt": "2026-07-23T18:44:53.722Z"
+      },
+      {
+        "id": "pmrxv6a6a3rgz",
+        "text": "Record videos for truck driver courses",
+        "horizon": "1d",
+        "completed": false,
+        "createdAt": "2026-07-23T18:47:58.210Z"
+      }
+    ]
+  }
+}
