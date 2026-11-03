@@ -10,7 +10,8 @@ import type {
   Store,
   Task,
   TaskCompletion,
-  TaskLifetimeStats,
+  TaskPeriodStats,
+  TaskStatsPeriod,
 } from "./types";
 import {
   PLAN_COMPLETE_SHARE,
@@ -285,32 +286,59 @@ export function computeTaskStreaks(
   return result;
 }
 
-export function computeTaskTotals(
+function dayHasActivity(day: DayLog): boolean {
+  if (day.mood != null) return true;
+  const completions = day.completions ?? {};
+  for (const value of Object.values(completions)) {
+    if (value?.done) return true;
+    if ((value?.count ?? 0) > 0) return true;
+  }
+  const planDone = day.planDone ?? {};
+  return Object.values(planDone).some(Boolean);
+}
+
+function aggregateTaskPeriod(
   tasks: Task[],
-  days: Record<string, DayLog>,
+  dayList: DayLog[],
   streaks: Record<string, number>,
-): TaskLifetimeStats[] {
-  return activeTasks(tasks)
+  includeStreak: boolean,
+): TaskPeriodStats[] {
+  const daysLogged = dayList.filter(dayHasActivity).length;
+
+  return [...tasks]
+    .filter((t) => !t.archived)
+    .sort((a, b) => a.order - b.order)
     .map((task) => {
       let daysCompleted = 0;
       let totalCount = 0;
-      for (const day of Object.values(days)) {
+      let daysWithCount = 0;
+      for (const day of dayList) {
         const completion = day.completions?.[task.id];
         if (!completion) continue;
         if (task.type === "count") {
-          totalCount += completion.count ?? 0;
+          const count = completion.count ?? 0;
+          if (count > 0) {
+            totalCount += count;
+            daysWithCount += 1;
+          }
         }
         if (isTaskComplete(task, completion)) {
           daysCompleted += 1;
         }
       }
+      const avgCount =
+        daysWithCount > 0
+          ? Math.round((totalCount / daysWithCount) * 10) / 10
+          : 0;
       return {
         id: task.id,
         title: task.title,
         type: task.type,
         daysCompleted,
-        streak: streaks[task.id] ?? 0,
+        daysLogged,
+        streak: includeStreak ? (streaks[task.id] ?? 0) : 0,
         totalCount,
+        avgCount,
         target: task.target,
       };
     })
@@ -321,6 +349,47 @@ export function computeTaskTotals(
       }
       return b.totalCount - a.totalCount;
     });
+}
+
+export function computeTaskPeriods(
+  tasks: Task[],
+  days: Record<string, DayLog>,
+  streaks: Record<string, number>,
+  today: string,
+): TaskStatsPeriod[] {
+  const dayList = Object.values(days).filter((d) => d.date <= today);
+  const years = [
+    ...new Set(dayList.map((d) => Number(d.date.slice(0, 4)))),
+  ].sort((a, b) => b - a);
+
+  const currentYear = Number(today.slice(0, 4));
+  const periods: TaskStatsPeriod[] = [
+    {
+      key: "all",
+      label: "All time",
+      year: null,
+      daysLogged: dayList.filter(dayHasActivity).length,
+      tasks: aggregateTaskPeriod(tasks, dayList, streaks, true),
+    },
+  ];
+
+  for (const year of years) {
+    const yearDays = dayList.filter((d) => d.date.startsWith(String(year)));
+    periods.push({
+      key: String(year),
+      label: String(year),
+      year,
+      daysLogged: yearDays.filter(dayHasActivity).length,
+      tasks: aggregateTaskPeriod(
+        tasks,
+        yearDays,
+        streaks,
+        year === currentYear,
+      ),
+    });
+  }
+
+  return periods;
 }
 
 export function buildAppState(store: Store, today: string): AppState {
@@ -383,7 +452,12 @@ export function buildAppState(store: Store, today: string): AppState {
     history,
     streak: computeStreak(today, historyByDate),
     taskStreaks,
-    taskTotals: computeTaskTotals(store.tasks, store.days, taskStreaks),
+    taskPeriods: computeTaskPeriods(
+      store.tasks,
+      store.days,
+      taskStreaks,
+      today,
+    ),
     plans,
     planProgress,
     completedLog: buildCompletedLog(store, today),

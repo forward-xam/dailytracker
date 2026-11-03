@@ -37,6 +37,7 @@ function shiftDate(date: string, days: number): string {
 
 export function StatsView({ state, today }: StatsViewProps) {
   const [selectedDate, setSelectedDate] = useState<string>(today);
+  const [periodKey, setPeriodKey] = useState<string>("all");
 
   const byDate = useMemo(() => {
     return new Map(state.history.map((h) => [h.date, h]));
@@ -116,6 +117,10 @@ export function StatsView({ state, today }: StatsViewProps) {
     allDays.length <= 1
       ? "Today"
       : `${allDays[0]?.date ?? "—"} → ${today}`;
+
+  const selectedPeriod =
+    state.taskPeriods.find((p) => p.key === periodKey) ??
+    state.taskPeriods[0];
 
   return (
     <section className="stats">
@@ -260,24 +265,60 @@ export function StatsView({ state, today }: StatsViewProps) {
       </div>
 
       <div className="panel">
-        <h2>Task totals</h2>
+        <h2>By task</h2>
         <p className="stats-period">
-          Days completed for each task — and lifetime totals for counters like
-          affirmations.
+          How many days you completed each habit — and for counters, total and
+          average times in the selected year.
         </p>
-        {state.taskTotals.length === 0 ? (
+        {state.taskPeriods.length > 0 && (
+          <div className="year-tabs" role="tablist" aria-label="Stats period">
+            {state.taskPeriods.map((period) => (
+              <button
+                key={period.key}
+                type="button"
+                role="tab"
+                aria-selected={selectedPeriod?.key === period.key}
+                className={`year-tab ${
+                  selectedPeriod?.key === period.key ? "year-tab--on" : ""
+                }`}
+                onClick={() => setPeriodKey(period.key)}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {selectedPeriod && (
+          <p className="totals-period-meta">
+            {selectedPeriod.daysLogged} logged day
+            {selectedPeriod.daysLogged === 1 ? "" : "s"}
+            {selectedPeriod.year == null ? " all time" : ` in ${selectedPeriod.year}`}
+          </p>
+        )}
+        {!selectedPeriod || selectedPeriod.tasks.length === 0 ? (
           <p className="empty">
-            Complete tasks to build lifetime totals here.
+            Complete tasks to build yearly totals here.
           </p>
         ) : (
           <ul className="totals-list">
-            {state.taskTotals.map((item) => (
+            {selectedPeriod.tasks.map((item) => (
               <li key={item.id} className="totals-item">
                 <div className="totals-item__title">{item.title}</div>
                 <div className="totals-item__stats">
                   <span>
                     <strong>{item.daysCompleted}</strong> day
-                    {item.daysCompleted === 1 ? "" : "s"} done
+                    {item.daysCompleted === 1 ? "" : "s"}
+                    {selectedPeriod.daysLogged > 0 && (
+                      <>
+                        {" "}
+                        (
+                        {Math.round(
+                          (item.daysCompleted / selectedPeriod.daysLogged) *
+                            100,
+                        )}
+                        % of logged)
+                      </>
+                    )}
                   </span>
                   {item.streak > 0 && (
                     <span>
@@ -285,10 +326,24 @@ export function StatsView({ state, today }: StatsViewProps) {
                     </span>
                   )}
                   {item.type === "count" && (
-                    <span className="totals-item__count">
-                      total <strong>{item.totalCount.toLocaleString()}</strong>
-                      {item.target ? ` / ${item.target} per day` : ""}
-                    </span>
+                    <>
+                      <span className="totals-item__count">
+                        total{" "}
+                        <strong>{item.totalCount.toLocaleString()}</strong>
+                        {item.target ? (
+                          <span className="totals-item__target">
+                            {" "}
+                            (goal {item.target.toLocaleString()}/day)
+                          </span>
+                        ) : null}
+                      </span>
+                      {item.avgCount > 0 && (
+                        <span>
+                          avg <strong>{item.avgCount.toLocaleString()}</strong>
+                          /day done
+                        </span>
+                      )}
+                    </>
                   )}
                 </div>
               </li>

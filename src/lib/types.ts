@@ -127,18 +127,32 @@ export interface PlanHorizonProgress {
   progress: number;
 }
 
-/** Lifetime totals for one routine task across all recorded days. */
-export interface TaskLifetimeStats {
+/** Totals for one routine task over a period (all-time or a calendar year). */
+export interface TaskPeriodStats {
   id: string;
   title: string;
   type: TaskType;
-  /** Days the task was fully completed */
+  /** Days the task was fully completed in the period */
   daysCompleted: number;
-  /** Current consecutive-day streak */
+  /** Days in the period that have any logged activity */
+  daysLogged: number;
+  /** Current consecutive-day streak (only meaningful for all-time / current year) */
   streak: number;
   /** Sum of counts for count-type tasks (e.g. total affirmations) */
   totalCount: number;
+  /** Average count on days with any count > 0 */
+  avgCount: number;
   target?: number;
+}
+
+/** One selectable stats period: all recorded time, or a single year. */
+export interface TaskStatsPeriod {
+  /** `"all"` or a calendar year like `"2026"` */
+  key: string;
+  label: string;
+  year: number | null;
+  daysLogged: number;
+  tasks: TaskPeriodStats[];
 }
 
 export interface AppState {
@@ -148,7 +162,8 @@ export interface AppState {
   history: DayStats[];
   streak: StreakInfo;
   taskStreaks: Record<string, number>;
-  taskTotals: TaskLifetimeStats[];
+  /** All-time + each calendar year with logged days */
+  taskPeriods: TaskStatsPeriod[];
   plans: Record<PlanHorizon, PlanItem[]>;
   planProgress: PlanHorizonProgress[];
   /** Newest first — completed daily plans, long-term plans, and routines */

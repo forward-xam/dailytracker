@@ -1091,12 +1091,49 @@ button {
   color: var(--orange);
 }
 
+.year-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+}
+
+.year-tab {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+}
+
+.year-tab--on {
+  border-color: var(--orange);
+  background: color-mix(in srgb, var(--orange) 18%, transparent);
+  color: var(--text);
+}
+
+.totals-period-meta {
+  margin: 0 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .totals-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   gap: 0.65rem;
+}
+
+.totals-item__target {
+  color: var(--muted);
+  font-weight: 400;
 }
 
 .totals-item {
