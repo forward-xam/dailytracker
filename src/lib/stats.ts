@@ -211,7 +211,7 @@ export function buildCompletedLog(
     });
 }
 
-function shiftDate(date: string, days: number): string {
+export function shiftDate(date: string, days: number): string {
   const d = new Date(`${date}T12:00:00`);
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
@@ -392,7 +392,11 @@ export function computeTaskPeriods(
   return periods;
 }
 
-export function buildAppState(store: Store, today: string): AppState {
+export function buildAppState(
+  store: Store,
+  calendarToday: string,
+  viewDate = calendarToday,
+): AppState {
   const plans = store.plans ?? {
     "10y": [],
     "1y": [],
@@ -401,21 +405,24 @@ export function buildAppState(store: Store, today: string): AppState {
   };
   const completedHistory = store.completedHistory ?? [];
 
-  const day = store.days[today] ?? {
-    date: today,
+  const day = store.days[viewDate] ?? {
+    date: viewDate,
     completions: {},
     planDone: {},
     mood: null,
   };
   if (!day.planDone) day.planDone = {};
 
-  const historyDates = new Set([...Object.keys(store.days), today]);
+  const historyDates = new Set([
+    ...Object.keys(store.days),
+    calendarToday,
+    viewDate,
+  ]);
 
-  // Fill every day from the earliest recorded activity through today
-  const earliest =
-    [...historyDates].sort()[0] ?? today;
+  // Fill every day from the earliest recorded activity through calendar today
+  const earliest = [...historyDates].sort()[0] ?? calendarToday;
   let cursor = earliest;
-  while (cursor <= today) {
+  while (cursor <= calendarToday) {
     historyDates.add(cursor);
     cursor = shiftDate(cursor, 1);
   }
@@ -432,35 +439,41 @@ export function buildAppState(store: Store, today: string): AppState {
   }
 
   const history = Object.values(historyByDate)
-    .filter((h) => h.date <= today)
+    .filter((h) => h.date <= calendarToday)
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const planProgress = PLAN_HORIZONS.map((meta) =>
     planHorizonProgress(
       meta.id,
-      plansForDate(today, meta.id, plans, completedHistory),
+      plansForDate(viewDate, meta.id, plans, completedHistory),
       day,
     ),
   );
 
-  const taskStreaks = computeTaskStreaks(today, store.tasks, store.days);
+  const taskStreaks = computeTaskStreaks(
+    calendarToday,
+    store.tasks,
+    store.days,
+  );
 
   return {
     tasks: store.tasks.sort((a, b) => a.order - b.order),
     today: day,
-    todayStats: historyByDate[today],
+    todayStats:
+      historyByDate[viewDate] ??
+      computeDayStats(viewDate, store.tasks, day, plans, completedHistory),
     history,
-    streak: computeStreak(today, historyByDate),
+    streak: computeStreak(calendarToday, historyByDate),
     taskStreaks,
     taskPeriods: computeTaskPeriods(
       store.tasks,
       store.days,
       taskStreaks,
-      today,
+      calendarToday,
     ),
     plans,
     planProgress,
-    completedLog: buildCompletedLog(store, today),
+    completedLog: buildCompletedLog(store, calendarToday),
   };
 }
 

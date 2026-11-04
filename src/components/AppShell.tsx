@@ -18,6 +18,7 @@ import {
   shareUrl,
   upsertTaskLocal,
 } from "@/lib/client-db";
+import { shiftDate } from "@/lib/stats";
 import type {
   AppState,
   PlanHorizon,
@@ -29,6 +30,9 @@ import type {
 
 type Tab = "today" | "history" | "stats" | "tasks";
 
+/** How far back users can edit missed days. */
+const MAX_LOOKBACK_DAYS = 60;
+
 function clientToday(): string {
   const now = new Date();
   const y = now.getFullYear();
@@ -39,12 +43,15 @@ function clientToday(): string {
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>("today");
-  const [date] = useState(clientToday);
+  const [today] = useState(clientToday);
+  const [viewDate, setViewDate] = useState(today);
   const [state, setState] = useState<AppState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [share, setShare] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const earliestDate = shiftDate(today, -MAX_LOOKBACK_DAYS);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +59,7 @@ export function AppShell() {
       .then((result) => {
         if (cancelled) return;
         setShare(result.share || shareUrl(result.syncId));
-        setState(getState(date));
+        setState(getState(today, viewDate));
         setError(null);
       })
       .catch(() => {
@@ -61,7 +68,9 @@ export function AppShell() {
     return () => {
       cancelled = true;
     };
-  }, [date]);
+    // Initial load only — day changes refresh via setViewDate handlers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today]);
 
   function run(updater: () => AppState) {
     setBusy(true);
@@ -75,16 +84,22 @@ export function AppShell() {
     }
   }
 
+  function goToDate(next: string) {
+    if (next > today || next < earliestDate) return;
+    setViewDate(next);
+    setState(getState(today, next));
+  }
+
   function onToggle(task: Task) {
     const current = state?.today.completions[task.id]?.done ?? false;
-    run(() => setTaskCompletion(date, task.id, { done: !current }));
+    run(() => setTaskCompletion(viewDate, task.id, { done: !current }));
   }
 
   function onCount(task: Task, delta: number) {
     const current = state?.today.completions[task.id]?.count ?? 0;
     const max = task.target ?? Number.POSITIVE_INFINITY;
     const next = Math.min(max, Math.max(0, current + delta));
-    run(() => setTaskCompletion(date, task.id, { count: next }));
+    run(() => setTaskCompletion(viewDate, task.id, { count: next }));
   }
 
   async function copyLink() {
@@ -130,43 +145,49 @@ export function AppShell() {
         {tab === "today" && (
           <TodayView
             state={state}
-            date={date}
+            date={viewDate}
+            today={today}
+            canGoBack={viewDate > earliestDate}
+            canGoForward={viewDate < today}
             busy={busy}
+            onPrevDay={() => goToDate(shiftDate(viewDate, -1))}
+            onNextDay={() => goToDate(shiftDate(viewDate, 1))}
+            onGoToday={() => goToDate(today)}
             onToggle={onToggle}
             onCount={onCount}
-            onMood={(mood) => run(() => setMood(date, mood))}
+            onMood={(mood) => run(() => setMood(viewDate, mood))}
             onAddPlan={(horizon: PlanHorizon, text: string) =>
-              run(() => addPlanLocal(date, horizon, text))
+              run(() => addPlanLocal(viewDate, horizon, text))
             }
             onTogglePlanComplete={(item: PlanItem, completed: boolean) =>
-              run(() => patchPlanLocal(date, item.id, { completed }))
+              run(() => patchPlanLocal(viewDate, item.id, { completed }))
             }
             onTogglePlanDaily={(item: PlanItem, done: boolean) =>
-              run(() => setDailyPlanDoneLocal(date, item.id, done))
+              run(() => setDailyPlanDoneLocal(viewDate, item.id, done))
             }
             onDeletePlan={(item: PlanItem) =>
-              run(() => deletePlanLocal(date, item.id))
+              run(() => deletePlanLocal(viewDate, item.id))
             }
             onEditPlanText={(item: PlanItem, text: string) =>
-              run(() => patchPlanLocal(date, item.id, { text }))
+              run(() => patchPlanLocal(viewDate, item.id, { text }))
             }
           />
         )}
         {tab === "history" && <HistoryView state={state} />}
-        {tab === "stats" && <StatsView state={state} today={date} />}
+        {tab === "stats" && <StatsView state={state} today={today} />}
         {tab === "tasks" && (
           <TasksView
             state={state}
             busy={busy}
             onPatch={(id, patch) =>
-              run(() => patchTaskLocal(date, id, patch))
+              run(() => patchTaskLocal(viewDate, id, patch))
             }
             onCreate={(input: {
               title: string;
               group: TaskGroupId;
               type: TaskType;
               target?: number;
-            }) => run(() => upsertTaskLocal(date, input))}
+            }) => run(() => upsertTaskLocal(viewDate, input))}
           />
         )}
       </main>

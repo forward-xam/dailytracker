@@ -6,12 +6,18 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { TaskRow } from "@/components/TaskRow";
 import { GROUPS } from "@/lib/types";
 import type { AppState, PlanHorizon, PlanItem, Task } from "@/lib/types";
-import { formatDisplayDate } from "@/lib/stats";
+import { formatDisplayDate, shiftDate } from "@/lib/stats";
 
 interface TodayViewProps {
   state: AppState;
   date: string;
+  today: string;
+  canGoBack: boolean;
+  canGoForward: boolean;
   busy: boolean;
+  onPrevDay: () => void;
+  onNextDay: () => void;
+  onGoToday: () => void;
   onToggle: (task: Task) => void;
   onCount: (task: Task, delta: number) => void;
   onMood: (mood: number | null) => void;
@@ -22,10 +28,23 @@ interface TodayViewProps {
   onEditPlanText: (item: PlanItem, text: string) => void;
 }
 
+function dayRelationLabel(date: string, today: string): string {
+  if (date === today) return "Today";
+  if (date === shiftDate(today, -1)) return "Yesterday";
+  if (date === shiftDate(today, -2)) return "2 days ago";
+  return "Past day";
+}
+
 export function TodayView({
   state,
   date,
+  today,
+  canGoBack,
+  canGoForward,
   busy,
+  onPrevDay,
+  onNextDay,
+  onGoToday,
   onToggle,
   onCount,
   onMood,
@@ -36,6 +55,7 @@ export function TodayView({
   onEditPlanText,
 }: TodayViewProps) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const isPast = date < today;
 
   const active = useMemo(
     () =>
@@ -60,10 +80,46 @@ export function TodayView({
     <section className={`today ${busy ? "is-busy" : ""}`}>
       <header className="today__hero today__hero--compact">
         <p className="brand brand--compact">Day Mark</p>
-        <h1 className="today__date">{formatDisplayDate(date)}</h1>
-        <p className="today__support">
-          Partial counts count. Plans count. Keep stacking the day.
-        </p>
+        <div className="day-nav" role="group" aria-label="Choose day">
+          <button
+            type="button"
+            className="day-nav__btn"
+            onClick={onPrevDay}
+            disabled={!canGoBack}
+            aria-label="Previous day"
+          >
+            ‹
+          </button>
+          <div className="day-nav__center">
+            <span className="day-nav__label">
+              {dayRelationLabel(date, today)}
+            </span>
+            <h1 className="today__date">{formatDisplayDate(date)}</h1>
+          </div>
+          <button
+            type="button"
+            className="day-nav__btn"
+            onClick={onNextDay}
+            disabled={!canGoForward}
+            aria-label="Next day"
+          >
+            ›
+          </button>
+        </div>
+        {isPast ? (
+          <p className="today__support">
+            Editing a past day — mark what you actually did, then jump back to{" "}
+            <button type="button" className="linkish" onClick={onGoToday}>
+              today
+            </button>
+            .
+          </p>
+        ) : (
+          <p className="today__support">
+            Partial counts count. Plans count. Keep stacking the day. Use ‹ › to
+            fix yesterday.
+          </p>
+        )}
 
         <div className="today__score">
           <ProgressRing percent={state.todayStats.percent} size={112} stroke={8} />

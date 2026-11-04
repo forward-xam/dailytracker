@@ -189,8 +189,65 @@ button {
 }
 
 .today__hero--compact .today__date {
-  margin-top: 0.45rem;
+  margin-top: 0.15rem;
   font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+}
+
+.day-nav {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr 2.6rem;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.day-nav__btn {
+  appearance: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg-elevated) 80%, black);
+  color: var(--text);
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.day-nav__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.day-nav__center {
+  text-align: center;
+  min-width: 0;
+}
+
+.day-nav__label {
+  display: block;
+  color: var(--orange);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.day-nav__center .today__date {
+  margin: 0.1rem 0 0;
+}
+
+.linkish {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--orange);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
 }
 
 .today__hero--compact .today__support {

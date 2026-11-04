@@ -1,5 +1,5 @@
 import { SEED_TASKS } from "./seed";
-import { buildAppState } from "./stats";
+import { buildAppState, localToday } from "./stats";
 import type {
   AppState,
   DayLog,
@@ -9,6 +9,10 @@ import type {
   Store,
   Task,
 } from "./types";
+
+/** Calendar “today” used for streaks/history; view date is the day being edited. */
+let calendarAnchor = "";
+let viewAnchor = "";
 
 const LOCAL_KEY = "daymark-store-v1";
 const SYNC_KEY = "daymark-sync-id";
@@ -332,11 +336,22 @@ function dayRef(date: string): DayLog {
   return memory.days[date];
 }
 
-export function getState(date: string): AppState {
-  if (rolloverCompletedDailyPlans(date)) {
+export function getState(
+  calendarToday: string,
+  viewDate = calendarToday,
+): AppState {
+  calendarAnchor = calendarToday;
+  viewAnchor = viewDate;
+  if (rolloverCompletedDailyPlans(calendarToday)) {
     schedulePush();
   }
-  return buildAppState(memory, date);
+  return buildAppState(memory, calendarToday, viewDate);
+}
+
+function refreshState(): AppState {
+  const calendar = calendarAnchor || localToday();
+  const view = viewAnchor || calendar;
+  return getState(calendar, view);
 }
 
 export function setTaskCompletion(
@@ -347,17 +362,17 @@ export function setTaskCompletion(
   const day = dayRef(date);
   day.completions[taskId] = { ...day.completions[taskId], ...completion };
   schedulePush();
-  return getState(date);
+  return refreshState();
 }
 
 export function setMood(date: string, mood: number | null): AppState {
   dayRef(date).mood = mood;
   schedulePush();
-  return getState(date);
+  return refreshState();
 }
 
 export function upsertTaskLocal(
-  date: string,
+  _date: string,
   input: Partial<Task> & { title: string; group: Task["group"] },
 ): AppState {
   if (input.id) {
@@ -379,11 +394,11 @@ export function upsertTaskLocal(
     });
   }
   schedulePush();
-  return getState(date);
+  return refreshState();
 }
 
 export function patchTaskLocal(
-  date: string,
+  _date: string,
   id: string,
   patch: Partial<Omit<Task, "id">>,
 ): AppState {
@@ -392,11 +407,11 @@ export function patchTaskLocal(
     memory.tasks[idx] = { ...memory.tasks[idx], ...patch };
     schedulePush();
   }
-  return getState(date);
+  return refreshState();
 }
 
 export function addPlanLocal(
-  date: string,
+  _date: string,
   horizon: PlanHorizon,
   text: string,
 ): AppState {
@@ -409,7 +424,7 @@ export function addPlanLocal(
   };
   memory.plans[horizon].push(item);
   schedulePush();
-  return getState(date);
+  return refreshState();
 }
 
 export function patchPlanLocal(
@@ -435,15 +450,15 @@ export function patchPlanLocal(
       break;
     }
   }
-  return getState(date);
+  return refreshState();
 }
 
-export function deletePlanLocal(date: string, id: string): AppState {
+export function deletePlanLocal(_date: string, id: string): AppState {
   for (const horizon of Object.keys(memory.plans) as PlanHorizon[]) {
     memory.plans[horizon] = memory.plans[horizon].filter((p) => p.id !== id);
   }
   schedulePush();
-  return getState(date);
+  return refreshState();
 }
 
 export function setDailyPlanDoneLocal(
@@ -453,5 +468,5 @@ export function setDailyPlanDoneLocal(
 ): AppState {
   dayRef(date).planDone[itemId] = done;
   schedulePush();
-  return getState(date);
+  return refreshState();
 }
