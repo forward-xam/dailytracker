@@ -207,6 +207,15 @@ export const SEED_TASKS: Task[] = [
     archived: false,
   },
   {
+    id: "t34",
+    title: "Do not drink any alcohol",
+    group: "food",
+    type: "check",
+    order: 18.7,
+    hidden: false,
+    archived: false,
+  },
+  {
     id: "t19",
     title: "Do my daily plans",
     group: "work",

@@ -121,6 +121,15 @@ export function migrateStore(parsed: Store): Store {
       hidden: false,
       archived: false,
     },
+    {
+      id: "t34",
+      title: "Do not drink any alcohol",
+      group: "food" as const,
+      type: "check" as const,
+      order: 18.7,
+      hidden: false,
+      archived: false,
+    },
   ];
   for (const task of ensureTasks) {
     if (!parsed.tasks.some((t) => t.id === task.id)) {
