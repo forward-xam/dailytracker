@@ -57,10 +57,25 @@ export function migrateStore(parsed: Store): Store {
       task.archived = true;
       task.hidden = true;
     }
+    if (task.id === "t07") {
+      task.type = "count";
+      task.target = 2;
+      task.title = "Brush your teeth (2×)";
+    }
+    if (task.id === "t09") {
+      task.type = "count";
+      task.target = 5;
+      task.title = "Drink a glass of water (5×)";
+    }
     if (task.id === "t12") {
       task.type = "count";
       task.target = 3;
       task.title = "Back exercises (3 sets)";
+    }
+    if (task.id === "t13") {
+      task.type = "count";
+      task.target = 2;
+      task.title = "Put cream on your fingers (2×)";
     }
     if (task.id === "t29" && task.type === "count") {
       task.target = 2000;
@@ -83,6 +98,26 @@ export function migrateStore(parsed: Store): Store {
       group: "food" as const,
       type: "check" as const,
       order: 18.5,
+      hidden: false,
+      archived: false,
+    },
+    {
+      id: "t32",
+      title: "Make 20 sit-ups (3 sets)",
+      group: "body" as const,
+      type: "count" as const,
+      target: 3,
+      order: 12.3,
+      hidden: false,
+      archived: false,
+    },
+    {
+      id: "t33",
+      title: "Make 25 push-ups (3 sets)",
+      group: "body" as const,
+      type: "count" as const,
+      target: 3,
+      order: 12.6,
       hidden: false,
       archived: false,
     },
