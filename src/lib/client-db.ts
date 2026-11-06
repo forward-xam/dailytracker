@@ -130,6 +130,26 @@ export function migrateStore(parsed: Store): Store {
       hidden: false,
       archived: false,
     },
+    {
+      id: "t35",
+      title: "Put cream on my toes (2×)",
+      group: "body" as const,
+      type: "count" as const,
+      target: 2,
+      order: 13.3,
+      hidden: false,
+      archived: false,
+    },
+    {
+      id: "t36",
+      title: "Put special liquid on my toenail (2×)",
+      group: "body" as const,
+      type: "count" as const,
+      target: 2,
+      order: 13.6,
+      hidden: false,
+      archived: false,
+    },
   ];
   for (const task of ensureTasks) {
     if (!parsed.tasks.some((t) => t.id === task.id)) {
