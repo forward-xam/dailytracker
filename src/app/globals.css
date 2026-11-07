@@ -551,6 +551,16 @@ button {
   padding: 0.75rem;
 }
 
+.mood-panel--evening {
+  margin-top: 0.35rem;
+}
+
+.mood-compare {
+  margin: 0.65rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .plan-slots {
   margin-bottom: 1rem;
 }

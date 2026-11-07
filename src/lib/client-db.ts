@@ -28,7 +28,7 @@ function emptyPlans(): Store["plans"] {
 }
 
 function emptyDay(date: string): DayLog {
-  return { date, completions: {}, planDone: {}, mood: null };
+  return { date, completions: {}, planDone: {}, mood: null, moodEvening: null };
 }
 
 export function defaultStore(): Store {
@@ -48,6 +48,7 @@ export function migrateStore(parsed: Store): Store {
   if (!parsed.completedHistory) parsed.completedHistory = [];
   for (const day of Object.values(parsed.days ?? {})) {
     if (!day.planDone) day.planDone = {};
+    if (day.moodEvening === undefined) day.moodEvening = null;
   }
   if (!parsed.days) parsed.days = {};
   if (!parsed.tasks) parsed.tasks = structuredClone(SEED_TASKS);
@@ -397,6 +398,9 @@ function dayRef(date: string): DayLog {
     memory.days[date] = emptyDay(date);
   }
   if (!memory.days[date].planDone) memory.days[date].planDone = {};
+  if (memory.days[date].moodEvening === undefined) {
+    memory.days[date].moodEvening = null;
+  }
   return memory.days[date];
 }
 
@@ -429,8 +433,17 @@ export function setTaskCompletion(
   return refreshState();
 }
 
-export function setMood(date: string, mood: number | null): AppState {
-  dayRef(date).mood = mood;
+export function setMood(
+  date: string,
+  mood: number | null,
+  slot: "morning" | "evening" = "morning",
+): AppState {
+  const day = dayRef(date);
+  if (slot === "evening") {
+    day.moodEvening = mood;
+  } else {
+    day.mood = mood;
+  }
   schedulePush();
   return refreshState();
 }

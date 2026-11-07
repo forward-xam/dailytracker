@@ -61,6 +61,7 @@ export function StatsView({ state, today }: StatsViewProps) {
           total: state.todayStats.total,
           percent: 0,
           mood: null,
+          moodEvening: null,
         },
       );
       cursor = shiftDate(cursor, 1);
@@ -71,7 +72,11 @@ export function StatsView({ state, today }: StatsViewProps) {
   const activeDays = useMemo(
     () =>
       allDays.filter(
-        (d) => d.completed > 0 || d.mood != null || d.percent > 0,
+        (d) =>
+          d.completed > 0 ||
+          d.mood != null ||
+          d.moodEvening != null ||
+          d.percent > 0,
       ),
     [allDays],
   );
@@ -107,7 +112,11 @@ export function StatsView({ state, today }: StatsViewProps) {
         .filter(
           (h) =>
             h.date <= today &&
-            (h.completed > 0 || h.mood != null || h.percent > 0 || h.date === today),
+            (h.completed > 0 ||
+              h.mood != null ||
+              h.moodEvening != null ||
+              h.percent > 0 ||
+              h.date === today),
         )
         .sort((a, b) => b.date.localeCompare(a.date)),
     [allDays, today],
@@ -185,7 +194,12 @@ export function StatsView({ state, today }: StatsViewProps) {
           <span>
             {selected.completed}/{selected.total} completed
           </span>
-          {selected.mood != null && <span>Mood {selected.mood}/10</span>}
+          {selected.mood != null && (
+            <span>Morning {selected.mood}/10</span>
+          )}
+          {selected.moodEvening != null && (
+            <span>Evening {selected.moodEvening}/10</span>
+          )}
         </div>
         <div className="day-detail__bar-wrap" aria-hidden>
           <div
@@ -201,7 +215,10 @@ export function StatsView({ state, today }: StatsViewProps) {
         <div className="heat-grid heat-grid--full">
           {allDays.map((day) => {
             const hasActivity =
-              day.completed > 0 || day.mood != null || day.percent > 0;
+              day.completed > 0 ||
+              day.mood != null ||
+              day.moodEvening != null ||
+              day.percent > 0;
             return (
               <button
                 key={day.date}
@@ -244,8 +261,14 @@ export function StatsView({ state, today }: StatsViewProps) {
               >
                 <div>
                   <strong>{day.date}</strong>
-                  {day.mood != null && (
-                    <span className="day-list__mood">mood {day.mood}/10</span>
+                  {(day.mood != null || day.moodEvening != null) && (
+                    <span className="day-list__mood">
+                      {day.mood != null ? `am ${day.mood}` : "am —"}
+                      {" → "}
+                      {day.moodEvening != null
+                        ? `pm ${day.moodEvening}`
+                        : "pm —"}
+                    </span>
                   )}
                 </div>
                 <div className="day-list__bar-wrap">

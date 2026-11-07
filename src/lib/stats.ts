@@ -144,6 +144,7 @@ export function computeDayStats(
     total,
     percent,
     mood: day?.mood ?? null,
+    moodEvening: day?.moodEvening ?? null,
   };
 }
 
@@ -287,7 +288,7 @@ export function computeTaskStreaks(
 }
 
 function dayHasActivity(day: DayLog): boolean {
-  if (day.mood != null) return true;
+  if (day.mood != null || day.moodEvening != null) return true;
   const completions = day.completions ?? {};
   for (const value of Object.values(completions)) {
     if (value?.done) return true;
@@ -410,8 +411,10 @@ export function buildAppState(
     completions: {},
     planDone: {},
     mood: null,
+    moodEvening: null,
   };
   if (!day.planDone) day.planDone = {};
+  if (day.moodEvening === undefined) day.moodEvening = null;
 
   const historyDates = new Set([
     ...Object.keys(store.days),

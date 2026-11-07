@@ -52,7 +52,10 @@ export interface DayLog {
   completions: Record<string, TaskCompletion>;
   /** Daily-plan item ids marked done on this date */
   planDone: Record<string, boolean>;
+  /** How you feel at the start of the day (1–10) */
   mood: number | null;
+  /** How you feel at the end of the day (1–10) */
+  moodEvening: number | null;
 }
 
 export interface Store {
@@ -111,7 +114,10 @@ export interface DayStats {
   completed: number;
   total: number;
   percent: number;
+  /** Morning mood 1–10 */
   mood: number | null;
+  /** Evening mood 1–10 */
+  moodEvening: number | null;
 }
 
 export interface StreakInfo {

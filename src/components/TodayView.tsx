@@ -20,7 +20,7 @@ interface TodayViewProps {
   onGoToday: () => void;
   onToggle: (task: Task) => void;
   onCount: (task: Task, delta: number) => void;
-  onMood: (mood: number | null) => void;
+  onMood: (mood: number | null, slot?: "morning" | "evening") => void;
   onAddPlan: (horizon: PlanHorizon, text: string) => void;
   onTogglePlanComplete: (item: PlanItem, completed: boolean) => void;
   onTogglePlanDaily: (item: PlanItem, done: boolean) => void;
@@ -147,7 +147,7 @@ export function TodayView({
 
       <div className="mood-panel mood-panel--compact">
         <div className="mood-panel__head">
-          <span>How do you feel?</span>
+          <span>Morning — how do you feel?</span>
           <strong>{state.today.mood ? `${state.today.mood}/10` : "—"}</strong>
         </div>
         <div className="mood-scale">
@@ -156,7 +156,9 @@ export function TodayView({
               key={n}
               type="button"
               className={`mood-btn ${state.today.mood === n ? "mood-btn--on" : ""}`}
-              onClick={() => onMood(state.today.mood === n ? null : n)}
+              onClick={() =>
+                onMood(state.today.mood === n ? null : n, "morning")
+              }
             >
               {n}
             </button>
@@ -217,6 +219,44 @@ export function TodayView({
           </div>
         );
       })}
+
+      <div className="mood-panel mood-panel--compact mood-panel--evening">
+        <div className="mood-panel__head">
+          <span>Evening — how do you feel now?</span>
+          <strong>
+            {state.today.moodEvening ? `${state.today.moodEvening}/10` : "—"}
+          </strong>
+        </div>
+        <div className="mood-scale">
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`mood-btn ${
+                state.today.moodEvening === n ? "mood-btn--on" : ""
+              }`}
+              onClick={() =>
+                onMood(state.today.moodEvening === n ? null : n, "evening")
+              }
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+        {(state.today.mood != null || state.today.moodEvening != null) && (
+          <p className="mood-compare">
+            Start {state.today.mood ?? "—"}/10 → end{" "}
+            {state.today.moodEvening ?? "—"}/10
+            {state.today.mood != null &&
+              state.today.moodEvening != null &&
+              (state.today.moodEvening - state.today.mood === 0
+                ? " · same"
+                : state.today.moodEvening > state.today.mood
+                  ? ` · +${state.today.moodEvening - state.today.mood}`
+                  : ` · ${state.today.moodEvening - state.today.mood}`)}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

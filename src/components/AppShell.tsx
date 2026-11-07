@@ -155,7 +155,9 @@ export function AppShell() {
             onGoToday={() => goToDate(today)}
             onToggle={onToggle}
             onCount={onCount}
-            onMood={(mood) => run(() => setMood(viewDate, mood))}
+            onMood={(mood, slot = "morning") =>
+              run(() => setMood(viewDate, mood, slot))
+            }
             onAddPlan={(horizon: PlanHorizon, text: string) =>
               run(() => addPlanLocal(viewDate, horizon, text))
             }
