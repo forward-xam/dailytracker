@@ -1,21 +1,34 @@
 "use client";
 
-import type { Task, TaskCompletion } from "@/lib/types";
+import { AffirmationList } from "@/components/AffirmationList";
+import type { AffirmationItem, Task, TaskCompletion } from "@/lib/types";
 
 interface TaskRowProps {
   task: Task;
   completion?: TaskCompletion;
   streak?: number;
+  affirmations?: AffirmationItem[];
+  affirmationCounts?: Record<string, number>;
   onToggle: (task: Task) => void;
   onCount: (task: Task, delta: number) => void;
+  onAffirmationBump?: (id: string, delta: number) => void;
+  onAffirmationAdd?: (text: string) => void;
+  onAffirmationHide?: (id: string, hidden: boolean) => void;
+  onAffirmationDelete?: (id: string) => void;
 }
 
 export function TaskRow({
   task,
   completion,
   streak = 0,
+  affirmations = [],
+  affirmationCounts = {},
   onToggle,
   onCount,
+  onAffirmationBump,
+  onAffirmationAdd,
+  onAffirmationHide,
+  onAffirmationDelete,
 }: TaskRowProps) {
   const done =
     task.type === "count"
@@ -79,6 +92,21 @@ export function TaskRow({
             <span className="tapper__label">Tap</span>
           </button>
         </div>
+
+        {onAffirmationBump &&
+          onAffirmationAdd &&
+          onAffirmationHide &&
+          onAffirmationDelete && (
+            <AffirmationList
+              items={affirmations}
+              counts={affirmationCounts}
+              totalAtTarget={count >= target}
+              onBump={onAffirmationBump}
+              onAdd={onAffirmationAdd}
+              onHide={onAffirmationHide}
+              onDelete={onAffirmationDelete}
+            />
+          )}
       </div>
     );
   }

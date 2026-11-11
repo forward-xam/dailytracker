@@ -6,10 +6,14 @@ import { StatsView } from "@/components/StatsView";
 import { TasksView } from "@/components/TasksView";
 import { TodayView } from "@/components/TodayView";
 import {
+  addAffirmationLocal,
   addPlanLocal,
+  bumpAffirmationItem,
+  deleteAffirmationLocal,
   deletePlanLocal,
   getState,
   initClientDb,
+  patchAffirmationLocal,
   patchPlanLocal,
   patchTaskLocal,
   setDailyPlanDoneLocal,
@@ -155,6 +159,16 @@ export function AppShell() {
             onGoToday={() => goToDate(today)}
             onToggle={onToggle}
             onCount={onCount}
+            onAffirmationBump={(id, delta) =>
+              run(() => bumpAffirmationItem(viewDate, id, delta))
+            }
+            onAffirmationAdd={(text) => run(() => addAffirmationLocal(text))}
+            onAffirmationHide={(id, hidden) =>
+              run(() => patchAffirmationLocal(id, { hidden }))
+            }
+            onAffirmationDelete={(id) =>
+              run(() => deleteAffirmationLocal(id))
+            }
             onMood={(mood, slot = "morning") =>
               run(() => setMood(viewDate, mood, slot))
             }

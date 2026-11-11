@@ -26,6 +26,14 @@ export interface TaskCompletion {
   count?: number;
 }
 
+/** One reusable affirmation statement under the main affirmations counter. */
+export interface AffirmationItem {
+  id: string;
+  text: string;
+  order: number;
+  hidden: boolean;
+}
+
 export interface PlanItem {
   id: string;
   text: string;
@@ -56,12 +64,16 @@ export interface DayLog {
   mood: number | null;
   /** How you feel at the end of the day (1–10) */
   moodEvening: number | null;
+  /** Per-affirmation taps for this day (also add to the main affirmations total) */
+  affirmationCounts: Record<string, number>;
 }
 
 export interface Store {
   tasks: Task[];
   days: Record<string, DayLog>;
   plans: Record<PlanHorizon, PlanItem[]>;
+  /** Affirmation statements under the main + counter */
+  affirmations: AffirmationItem[];
   /** Archived completed daily plans (and other logged completions) */
   completedHistory: HistoryEntry[];
 }
@@ -172,6 +184,7 @@ export interface AppState {
   taskPeriods: TaskStatsPeriod[];
   plans: Record<PlanHorizon, PlanItem[]>;
   planProgress: PlanHorizonProgress[];
+  affirmations: AffirmationItem[];
   /** Newest first — completed daily plans, long-term plans, and routines */
   completedLog: HistoryEntry[];
 }

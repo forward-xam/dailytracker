@@ -412,9 +412,11 @@ export function buildAppState(
     planDone: {},
     mood: null,
     moodEvening: null,
+    affirmationCounts: {},
   };
   if (!day.planDone) day.planDone = {};
   if (day.moodEvening === undefined) day.moodEvening = null;
+  if (!day.affirmationCounts) day.affirmationCounts = {};
 
   const historyDates = new Set([
     ...Object.keys(store.days),
@@ -476,6 +478,9 @@ export function buildAppState(
     ),
     plans,
     planProgress,
+    affirmations: [...(store.affirmations ?? [])].sort(
+      (a, b) => a.order - b.order,
+    ),
     completedLog: buildCompletedLog(store, calendarToday),
   };
 }

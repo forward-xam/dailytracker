@@ -20,6 +20,10 @@ interface TodayViewProps {
   onGoToday: () => void;
   onToggle: (task: Task) => void;
   onCount: (task: Task, delta: number) => void;
+  onAffirmationBump: (id: string, delta: number) => void;
+  onAffirmationAdd: (text: string) => void;
+  onAffirmationHide: (id: string, hidden: boolean) => void;
+  onAffirmationDelete: (id: string) => void;
   onMood: (mood: number | null, slot?: "morning" | "evening") => void;
   onAddPlan: (horizon: PlanHorizon, text: string) => void;
   onTogglePlanComplete: (item: PlanItem, completed: boolean) => void;
@@ -47,6 +51,10 @@ export function TodayView({
   onGoToday,
   onToggle,
   onCount,
+  onAffirmationBump,
+  onAffirmationAdd,
+  onAffirmationHide,
+  onAffirmationDelete,
   onMood,
   onAddPlan,
   onTogglePlanComplete,
@@ -210,8 +218,14 @@ export function TodayView({
                     task={task}
                     completion={state.today.completions[task.id]}
                     streak={state.taskStreaks[task.id]}
+                    affirmations={state.affirmations}
+                    affirmationCounts={state.today.affirmationCounts ?? {}}
                     onToggle={onToggle}
                     onCount={onCount}
+                    onAffirmationBump={onAffirmationBump}
+                    onAffirmationAdd={onAffirmationAdd}
+                    onAffirmationHide={onAffirmationHide}
+                    onAffirmationDelete={onAffirmationDelete}
                   />
                 ))}
               </div>

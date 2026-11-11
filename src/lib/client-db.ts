@@ -1,6 +1,8 @@
+import { seedAffirmations } from "./affirmations-seed";
 import { SEED_TASKS } from "./seed";
 import { buildAppState, localToday } from "./stats";
 import type {
+  AffirmationItem,
   AppState,
   DayLog,
   HistoryEntry,
@@ -9,6 +11,8 @@ import type {
   Store,
   Task,
 } from "./types";
+
+export const AFFIRMATION_TASK_ID = "t29";
 
 /** Calendar “today” used for streaks/history; view date is the day being edited. */
 let calendarAnchor = "";
@@ -28,7 +32,14 @@ function emptyPlans(): Store["plans"] {
 }
 
 function emptyDay(date: string): DayLog {
-  return { date, completions: {}, planDone: {}, mood: null, moodEvening: null };
+  return {
+    date,
+    completions: {},
+    planDone: {},
+    mood: null,
+    moodEvening: null,
+    affirmationCounts: {},
+  };
 }
 
 export function defaultStore(): Store {
@@ -36,6 +47,7 @@ export function defaultStore(): Store {
     tasks: structuredClone(SEED_TASKS),
     days: {},
     plans: emptyPlans(),
+    affirmations: seedAffirmations(),
     completedHistory: [],
   };
 }
@@ -49,9 +61,13 @@ export function migrateStore(parsed: Store): Store {
   for (const day of Object.values(parsed.days ?? {})) {
     if (!day.planDone) day.planDone = {};
     if (day.moodEvening === undefined) day.moodEvening = null;
+    if (!day.affirmationCounts) day.affirmationCounts = {};
   }
   if (!parsed.days) parsed.days = {};
   if (!parsed.tasks) parsed.tasks = structuredClone(SEED_TASKS);
+  if (!parsed.affirmations || parsed.affirmations.length === 0) {
+    parsed.affirmations = seedAffirmations();
+  }
 
   for (const task of parsed.tasks) {
     if (task.id === "t03" || task.id === "t19") {
@@ -401,6 +417,12 @@ function dayRef(date: string): DayLog {
   if (memory.days[date].moodEvening === undefined) {
     memory.days[date].moodEvening = null;
   }
+  if (!memory.days[date].affirmationCounts) {
+    memory.days[date].affirmationCounts = {};
+  }
+  if (!memory.affirmations) {
+    memory.affirmations = seedAffirmations();
+  }
   return memory.days[date];
 }
 
@@ -429,6 +451,77 @@ export function setTaskCompletion(
 ): AppState {
   const day = dayRef(date);
   day.completions[taskId] = { ...day.completions[taskId], ...completion };
+  schedulePush();
+  return refreshState();
+}
+
+function affirmationTarget(): number {
+  const task = memory.tasks.find((t) => t.id === AFFIRMATION_TASK_ID);
+  return task?.target ?? 2000;
+}
+
+export function bumpAffirmationItem(
+  date: string,
+  itemId: string,
+  delta: number,
+): AppState {
+  const day = dayRef(date);
+  const currentItem = day.affirmationCounts[itemId] ?? 0;
+  const nextItem = Math.max(0, currentItem + delta);
+  day.affirmationCounts[itemId] = nextItem;
+
+  const currentTotal = day.completions[AFFIRMATION_TASK_ID]?.count ?? 0;
+  const max = affirmationTarget();
+  const nextTotal = Math.min(max, Math.max(0, currentTotal + delta));
+  day.completions[AFFIRMATION_TASK_ID] = {
+    ...day.completions[AFFIRMATION_TASK_ID],
+    count: nextTotal,
+  };
+
+  schedulePush();
+  return refreshState();
+}
+
+export function addAffirmationLocal(text: string): AppState {
+  const trimmed = text.trim();
+  if (!trimmed) return refreshState();
+  if (!memory.affirmations) memory.affirmations = seedAffirmations();
+  const maxOrder = memory.affirmations.reduce(
+    (m, item) => Math.max(m, item.order),
+    0,
+  );
+  const item: AffirmationItem = {
+    id: `aff${Date.now().toString(36)}`,
+    text: trimmed,
+    order: maxOrder + 1,
+    hidden: false,
+  };
+  memory.affirmations.push(item);
+  schedulePush();
+  return refreshState();
+}
+
+export function patchAffirmationLocal(
+  id: string,
+  patch: Partial<Pick<AffirmationItem, "text" | "hidden">>,
+): AppState {
+  if (!memory.affirmations) memory.affirmations = seedAffirmations();
+  const idx = memory.affirmations.findIndex((item) => item.id === id);
+  if (idx !== -1) {
+    memory.affirmations[idx] = { ...memory.affirmations[idx], ...patch };
+    schedulePush();
+  }
+  return refreshState();
+}
+
+export function deleteAffirmationLocal(id: string): AppState {
+  if (!memory.affirmations) memory.affirmations = seedAffirmations();
+  memory.affirmations = memory.affirmations.filter((item) => item.id !== id);
+  for (const day of Object.values(memory.days)) {
+    if (day.affirmationCounts?.[id] != null) {
+      delete day.affirmationCounts[id];
+    }
+  }
   schedulePush();
   return refreshState();
 }
