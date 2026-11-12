@@ -58,8 +58,10 @@ export interface HistoryEntry {
 export interface DayLog {
   date: string;
   completions: Record<string, TaskCompletion>;
-  /** Daily-plan item ids marked done on this date */
+  /** @deprecated Prefer item.completed on day.plans — kept for older 1d data */
   planDone: Record<string, boolean>;
+  /** Plans written for this calendar day only (all horizons start empty each day) */
+  plans: Record<PlanHorizon, PlanItem[]>;
   /** How you feel at the start of the day (1–10) */
   mood: number | null;
   /** How you feel at the end of the day (1–10) */
@@ -71,6 +73,10 @@ export interface DayLog {
 export interface Store {
   tasks: Task[];
   days: Record<string, DayLog>;
+  /**
+   * Legacy global plans (pre per-day plans). Migrated into a DayLog on load.
+   * Kept empty going forward.
+   */
   plans: Record<PlanHorizon, PlanItem[]>;
   /** Affirmation statements under the main + counter */
   affirmations: AffirmationItem[];
@@ -97,24 +103,28 @@ export const PLAN_HORIZONS: { id: PlanHorizon; label: string; hint: string }[] =
     {
       id: "10y",
       label: "10-year plans",
-      hint: "Big life direction. Writing it boosts today’s %.",
+      hint: "Write today’s 10-year vision. Each new day starts this slot empty.",
     },
     {
       id: "1y",
       label: "1-year plans",
-      hint: "This year’s targets. Mark items as you finish them.",
+      hint: "Write today’s 1-year targets. Fresh list every morning.",
     },
     {
       id: "1m",
       label: "1-month plans",
-      hint: "This month’s focus.",
+      hint: "Write today’s month focus. Fresh list every morning.",
     },
     {
       id: "1d",
       label: "1-day plans",
-      hint: "Today’s checklist. Finished items leave this list tomorrow and move to Completed.",
+      hint: "Today’s checklist. Tomorrow this slot starts empty again.",
     },
   ];
+
+export function emptyPlanSlots(): Record<PlanHorizon, PlanItem[]> {
+  return { "10y": [], "1y": [], "1m": [], "1d": [] };
+}
 
 /** Written plans give this share; completing items gives the rest. */
 export const PLAN_WRITE_SHARE = 0.25;

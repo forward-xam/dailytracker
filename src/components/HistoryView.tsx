@@ -41,8 +41,9 @@ export function HistoryView({ state }: HistoryViewProps) {
         <p className="brand brand--compact">Day Mark</p>
         <h1>Completed</h1>
         <p>
-          Everything you’ve finished, with the date you completed it. Daily
-          plans leave tomorrow’s list once done.
+          Everything you’ve finished, with the date you completed it. Completed
+          plans from past days land here; each new day starts with empty plan
+          slots.
         </p>
       </header>
 

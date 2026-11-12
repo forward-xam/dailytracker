@@ -11,6 +11,7 @@ import type {
   Store,
   Task,
 } from "./types";
+import { emptyPlanSlots, PLAN_HORIZONS } from "./types";
 
 export const AFFIRMATION_TASK_ID = "t29";
 
@@ -28,7 +29,15 @@ const CHUNK = 800;
 type Meta = { updatedAt: number };
 
 function emptyPlans(): Store["plans"] {
-  return { "10y": [], "1y": [], "1m": [], "1d": [] };
+  return emptyPlanSlots();
+}
+
+function ensureDayPlans(day: DayLog): Record<PlanHorizon, PlanItem[]> {
+  if (!day.plans) day.plans = emptyPlanSlots();
+  for (const meta of PLAN_HORIZONS) {
+    if (!day.plans[meta.id]) day.plans[meta.id] = [];
+  }
+  return day.plans;
 }
 
 function emptyDay(date: string): DayLog {
@@ -36,6 +45,7 @@ function emptyDay(date: string): DayLog {
     date,
     completions: {},
     planDone: {},
+    plans: emptyPlanSlots(),
     mood: null,
     moodEvening: null,
     affirmationCounts: {},
@@ -52,22 +62,76 @@ export function defaultStore(): Store {
   };
 }
 
-export function migrateStore(parsed: Store): Store {
+function hasAnyPlans(plans: Record<PlanHorizon, PlanItem[]> | undefined): boolean {
+  if (!plans) return false;
+  return PLAN_HORIZONS.some((meta) => (plans[meta.id] ?? []).length > 0);
+}
+
+/** Move legacy global plans onto the newest existing day (not onto a fresh today). */
+function migrateLegacyGlobalPlans(parsed: Store, calendarToday: string): void {
+  if (!hasAnyPlans(parsed.plans)) {
+    parsed.plans = emptyPlans();
+    return;
+  }
+
+  const dayAlreadyHasPlans = Object.values(parsed.days ?? {}).some((day) =>
+    hasAnyPlans(day.plans),
+  );
+  if (dayAlreadyHasPlans) {
+    parsed.plans = emptyPlans();
+    return;
+  }
+
+  const dates = Object.keys(parsed.days ?? {}).sort();
+  let target = dates.filter((d) => d <= calendarToday).at(-1) ?? null;
+  if (!target) {
+    // Prefer parking legacy plans on yesterday so a brand-new today stays empty.
+    const y = new Date(`${calendarToday}T12:00:00`);
+    y.setDate(y.getDate() - 1);
+    target = y.toISOString().slice(0, 10);
+  }
+
+  if (!parsed.days[target]) {
+    parsed.days[target] = emptyDay(target);
+  }
+  ensureDayPlans(parsed.days[target]);
+  for (const meta of PLAN_HORIZONS) {
+    parsed.days[target].plans[meta.id] = structuredClone(
+      parsed.plans[meta.id] ?? [],
+    );
+  }
+  // Mirror old 1d planDone completion onto item.completed for that day.
+  const planDone = parsed.days[target].planDone ?? {};
+  for (const item of parsed.days[target].plans["1d"]) {
+    if (planDone[item.id]) {
+      item.completed = true;
+      item.completedOn = item.completedOn ?? target;
+    }
+  }
+  parsed.plans = emptyPlans();
+}
+
+export function migrateStore(
+  parsed: Store,
+  calendarToday = localToday(),
+): Store {
   if (!parsed.plans) parsed.plans = emptyPlans();
   for (const key of ["10y", "1y", "1m", "1d"] as PlanHorizon[]) {
     if (!parsed.plans[key]) parsed.plans[key] = [];
   }
   if (!parsed.completedHistory) parsed.completedHistory = [];
-  for (const day of Object.values(parsed.days ?? {})) {
+  if (!parsed.days) parsed.days = {};
+  for (const day of Object.values(parsed.days)) {
     if (!day.planDone) day.planDone = {};
     if (day.moodEvening === undefined) day.moodEvening = null;
     if (!day.affirmationCounts) day.affirmationCounts = {};
+    ensureDayPlans(day);
   }
-  if (!parsed.days) parsed.days = {};
   if (!parsed.tasks) parsed.tasks = structuredClone(SEED_TASKS);
   if (!parsed.affirmations || parsed.affirmations.length === 0) {
     parsed.affirmations = seedAffirmations();
   }
+  migrateLegacyGlobalPlans(parsed, calendarToday);
 
   for (const task of parsed.tasks) {
     if (task.id === "t03" || task.id === "t19") {
@@ -326,41 +390,56 @@ function todayKey(): string {
   return `${y}-${m}-${d}`;
 }
 
-/** Move 1-day plans completed on a previous day into history and off today's list. */
+/**
+ * Archive completed plans from past days into history.
+ * Incomplete plans stay on their own day (visible if you go back).
+ * Today always starts with its own empty plan slots.
+ */
 export function rolloverCompletedDailyPlans(today: string): boolean {
   if (!memory.completedHistory) memory.completedHistory = [];
-  const remaining: PlanItem[] = [];
   let changed = false;
 
-  for (const item of memory.plans["1d"] ?? []) {
-    let completedOn: string | null = null;
-    for (const [date, day] of Object.entries(memory.days)) {
-      if (date < today && day.planDone?.[item.id]) {
-        if (!completedOn || date > completedOn) completedOn = date;
+  for (const [date, day] of Object.entries(memory.days)) {
+    if (date >= today) continue;
+    const plans = ensureDayPlans(day);
+    for (const meta of PLAN_HORIZONS) {
+      const kept: PlanItem[] = [];
+      for (const item of plans[meta.id] ?? []) {
+        const done =
+          item.completed || Boolean(day.planDone?.[item.id]);
+        if (!done) {
+          kept.push(item);
+          continue;
+        }
+        const completedOn = item.completedOn ?? date;
+        const entry: HistoryEntry = {
+          id: `plan-${item.id}-${completedOn}`,
+          title: item.text,
+          completedOn,
+          source: meta.id === "1d" ? "daily-plan" : "plan",
+          horizon: meta.id,
+          taskId: item.id,
+        };
+        if (!memory.completedHistory.some((h) => h.id === entry.id)) {
+          memory.completedHistory.push(entry);
+        }
+        changed = true;
       }
-    }
-
-    if (completedOn) {
-      const entry: HistoryEntry = {
-        id: `daily-${item.id}-${completedOn}`,
-        title: item.text,
-        completedOn,
-        source: "daily-plan",
-        horizon: "1d",
-        taskId: item.id,
-      };
-      if (!memory.completedHistory.some((h) => h.id === entry.id)) {
-        memory.completedHistory.push(entry);
+      if (kept.length !== (plans[meta.id] ?? []).length) {
+        plans[meta.id] = kept;
+        changed = true;
       }
-      changed = true;
-    } else {
-      remaining.push(item);
     }
   }
 
-  if (changed) {
-    memory.plans["1d"] = remaining;
+  // Ensure calendar today exists with empty slots if missing.
+  if (!memory.days[today]) {
+    memory.days[today] = emptyDay(today);
+    changed = true;
+  } else {
+    ensureDayPlans(memory.days[today]);
   }
+
   return changed;
 }
 
@@ -420,6 +499,7 @@ function dayRef(date: string): DayLog {
   if (!memory.days[date].affirmationCounts) {
     memory.days[date].affirmationCounts = {};
   }
+  ensureDayPlans(memory.days[date]);
   if (!memory.affirmations) {
     memory.affirmations = seedAffirmations();
   }
@@ -581,10 +661,11 @@ export function patchTaskLocal(
 }
 
 export function addPlanLocal(
-  _date: string,
+  date: string,
   horizon: PlanHorizon,
   text: string,
 ): AppState {
+  const day = dayRef(date);
   const item: PlanItem = {
     id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     text: text.trim(),
@@ -592,7 +673,7 @@ export function addPlanLocal(
     completed: false,
     createdAt: new Date().toISOString(),
   };
-  memory.plans[horizon].push(item);
+  day.plans[horizon].push(item);
   schedulePush();
   return refreshState();
 }
@@ -602,20 +683,23 @@ export function patchPlanLocal(
   id: string,
   patch: Partial<Pick<PlanItem, "text" | "completed">>,
 ): AppState {
-  for (const horizon of Object.keys(memory.plans) as PlanHorizon[]) {
-    const idx = memory.plans[horizon].findIndex((p) => p.id === id);
+  const day = dayRef(date);
+  for (const meta of PLAN_HORIZONS) {
+    const idx = day.plans[meta.id].findIndex((p) => p.id === id);
     if (idx !== -1) {
-      const current = memory.plans[horizon][idx];
+      const current = day.plans[meta.id][idx];
       const next: PlanItem = {
         ...current,
         ...patch,
       };
       if (patch.completed === true) {
         next.completedOn = date;
+        day.planDone[id] = true;
       } else if (patch.completed === false) {
         next.completedOn = null;
+        day.planDone[id] = false;
       }
-      memory.plans[horizon][idx] = next;
+      day.plans[meta.id][idx] = next;
       schedulePush();
       break;
     }
@@ -623,10 +707,12 @@ export function patchPlanLocal(
   return refreshState();
 }
 
-export function deletePlanLocal(_date: string, id: string): AppState {
-  for (const horizon of Object.keys(memory.plans) as PlanHorizon[]) {
-    memory.plans[horizon] = memory.plans[horizon].filter((p) => p.id !== id);
+export function deletePlanLocal(date: string, id: string): AppState {
+  const day = dayRef(date);
+  for (const meta of PLAN_HORIZONS) {
+    day.plans[meta.id] = day.plans[meta.id].filter((p) => p.id !== id);
   }
+  if (day.planDone[id] != null) delete day.planDone[id];
   schedulePush();
   return refreshState();
 }
@@ -636,7 +722,5 @@ export function setDailyPlanDoneLocal(
   itemId: string,
   done: boolean,
 ): AppState {
-  dayRef(date).planDone[itemId] = done;
-  schedulePush();
-  return refreshState();
+  return patchPlanLocal(date, itemId, { completed: done });
 }

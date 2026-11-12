@@ -17,6 +17,7 @@ import {
   PLAN_COMPLETE_SHARE,
   PLAN_HORIZONS,
   PLAN_WRITE_SHARE,
+  emptyPlanSlots,
 } from "./types";
 
 export const STREAK_THRESHOLD = 70;
@@ -62,14 +63,9 @@ export function planHorizonProgress(
     };
   }
 
-  let completedCount = 0;
-  if (horizon === "1d") {
-    completedCount = items.filter(
-      (item) => item.completed || Boolean(day?.planDone?.[item.id]),
-    ).length;
-  } else {
-    completedCount = items.filter((item) => item.completed).length;
-  }
+  const completedCount = items.filter(
+    (item) => item.completed || Boolean(day?.planDone?.[item.id]),
+  ).length;
 
   const progress =
     PLAN_WRITE_SHARE + PLAN_COMPLETE_SHARE * (completedCount / itemCount);
@@ -85,45 +81,20 @@ export function planHorizonProgress(
 function plansForDate(
   date: string,
   horizon: PlanHorizon,
-  plans: Store["plans"],
-  completedHistory: HistoryEntry[],
+  store: Store,
 ): PlanItem[] {
-  if (horizon !== "1d") {
-    return plans[horizon] ?? [];
-  }
+  const dayPlans = store.days[date]?.plans?.[horizon];
+  if (dayPlans) return dayPlans;
 
-  const active = (plans["1d"] ?? []).filter((item) => {
-    const created = item.createdAt.slice(0, 10);
-    return !created || created <= date;
-  });
-
-  const archivedThatDay = completedHistory
-    .filter(
-      (entry) =>
-        entry.source === "daily-plan" &&
-        entry.horizon === "1d" &&
-        entry.completedOn === date,
-    )
-    .map(
-      (entry): PlanItem => ({
-        id: entry.taskId ?? entry.id,
-        text: entry.title,
-        horizon: "1d",
-        completed: true,
-        completedOn: entry.completedOn,
-        createdAt: `${entry.completedOn}T12:00:00.000Z`,
-      }),
-    );
-
-  return [...active, ...archivedThatDay];
+  // Legacy fallback while old global plans still exist pre-migration.
+  return store.plans?.[horizon] ?? [];
 }
 
 export function computeDayStats(
   date: string,
   tasks: Task[],
   day: DayLog | undefined,
-  plans: Store["plans"],
-  completedHistory: HistoryEntry[] = [],
+  store: Store,
 ): DayStats {
   const active = activeTasks(tasks);
   let earned = 0;
@@ -132,7 +103,7 @@ export function computeDayStats(
   }
 
   for (const meta of PLAN_HORIZONS) {
-    const items = plansForDate(date, meta.id, plans, completedHistory);
+    const items = plansForDate(date, meta.id, store);
     earned += planHorizonProgress(meta.id, items, day).progress;
   }
 
@@ -150,23 +121,9 @@ export function computeDayStats(
 
 export function buildCompletedLog(
   store: Store,
-  today: string,
+  _today: string,
 ): HistoryEntry[] {
   const entries: HistoryEntry[] = [...(store.completedHistory ?? [])];
-
-  for (const horizon of ["10y", "1y", "1m"] as PlanHorizon[]) {
-    for (const item of store.plans[horizon] ?? []) {
-      if (!item.completed) continue;
-      const completedOn = item.completedOn ?? item.createdAt.slice(0, 10);
-      entries.push({
-        id: `plan-${item.id}`,
-        title: item.text,
-        completedOn,
-        source: "plan",
-        horizon,
-      });
-    }
-  }
 
   const taskMap = new Map(store.tasks.map((t) => [t.id, t]));
   for (const [date, day] of Object.entries(store.days)) {
@@ -183,16 +140,18 @@ export function buildCompletedLog(
       });
     }
 
-    // Still-active 1d plans completed today stay in the list; log them too
-    if (date === today) {
-      for (const item of store.plans["1d"] ?? []) {
-        if (!day.planDone?.[item.id]) continue;
+    for (const meta of PLAN_HORIZONS) {
+      for (const item of day.plans?.[meta.id] ?? []) {
+        const done =
+          item.completed || Boolean(day.planDone?.[item.id]);
+        if (!done) continue;
         entries.push({
-          id: `daily-today-${item.id}-${date}`,
+          id: `plan-day-${item.id}-${date}`,
           title: item.text,
-          completedOn: date,
-          source: "daily-plan",
-          horizon: "1d",
+          completedOn: item.completedOn ?? date,
+          source: meta.id === "1d" ? "daily-plan" : "plan",
+          horizon: meta.id,
+          taskId: item.id,
         });
       }
     }
@@ -295,7 +254,11 @@ function dayHasActivity(day: DayLog): boolean {
     if ((value?.count ?? 0) > 0) return true;
   }
   const planDone = day.planDone ?? {};
-  return Object.values(planDone).some(Boolean);
+  if (Object.values(planDone).some(Boolean)) return true;
+  for (const meta of PLAN_HORIZONS) {
+    if ((day.plans?.[meta.id] ?? []).length > 0) return true;
+  }
+  return false;
 }
 
 function aggregateTaskPeriod(
@@ -398,18 +361,11 @@ export function buildAppState(
   calendarToday: string,
   viewDate = calendarToday,
 ): AppState {
-  const plans = store.plans ?? {
-    "10y": [],
-    "1y": [],
-    "1m": [],
-    "1d": [],
-  };
-  const completedHistory = store.completedHistory ?? [];
-
   const day = store.days[viewDate] ?? {
     date: viewDate,
     completions: {},
     planDone: {},
+    plans: emptyPlanSlots(),
     mood: null,
     moodEvening: null,
     affirmationCounts: {},
@@ -417,6 +373,12 @@ export function buildAppState(
   if (!day.planDone) day.planDone = {};
   if (day.moodEvening === undefined) day.moodEvening = null;
   if (!day.affirmationCounts) day.affirmationCounts = {};
+  if (!day.plans) day.plans = emptyPlanSlots();
+  for (const meta of PLAN_HORIZONS) {
+    if (!day.plans[meta.id]) day.plans[meta.id] = [];
+  }
+
+  const viewPlans = day.plans;
 
   const historyDates = new Set([
     ...Object.keys(store.days),
@@ -438,8 +400,7 @@ export function buildAppState(
       date,
       store.tasks,
       store.days[date],
-      plans,
-      completedHistory,
+      store,
     );
   }
 
@@ -450,7 +411,7 @@ export function buildAppState(
   const planProgress = PLAN_HORIZONS.map((meta) =>
     planHorizonProgress(
       meta.id,
-      plansForDate(viewDate, meta.id, plans, completedHistory),
+      plansForDate(viewDate, meta.id, store),
       day,
     ),
   );
@@ -466,7 +427,7 @@ export function buildAppState(
     today: day,
     todayStats:
       historyByDate[viewDate] ??
-      computeDayStats(viewDate, store.tasks, day, plans, completedHistory),
+      computeDayStats(viewDate, store.tasks, day, store),
     history,
     streak: computeStreak(calendarToday, historyByDate),
     taskStreaks,
@@ -476,7 +437,7 @@ export function buildAppState(
       taskStreaks,
       calendarToday,
     ),
-    plans,
+    plans: viewPlans,
     planProgress,
     affirmations: [...(store.affirmations ?? [])].sort(
       (a, b) => a.order - b.order,

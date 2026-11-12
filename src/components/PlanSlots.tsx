@@ -49,7 +49,9 @@ export function PlanSlots({
     <div className="plan-slots">
       <div className="plan-slots__title">
         <h2>Your plans</h2>
-        <p>Tap a slot to write and check off plans.</p>
+        <p>
+          Write fresh plans each day — every morning all four slots start empty.
+        </p>
       </div>
 
       {PLAN_HORIZONS.map((meta) => {
@@ -114,9 +116,8 @@ export function PlanSlots({
                 <ul className="plan-list">
                   {items.map((item) => {
                     const checked =
-                      meta.id === "1d"
-                        ? Boolean(state.today.planDone?.[item.id])
-                        : item.completed;
+                      item.completed ||
+                      Boolean(state.today.planDone?.[item.id]);
                     return (
                       <li
                         key={item.id}
@@ -126,6 +127,7 @@ export function PlanSlots({
                           type="button"
                           className={`check ${checked ? "check--on" : ""}`}
                           onClick={() => {
+                            // All horizons are per-day now; keep both callbacks for compat.
                             if (meta.id === "1d") {
                               onToggleDaily(item, !checked);
                             } else {
